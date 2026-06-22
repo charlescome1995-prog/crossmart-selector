@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrossMart - 选品工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#eaeded;color:#0f1111;font-size:14px;min-height:100vh}
+
+/* Topbar */
+.topbar{background:linear-gradient(135deg,#131921 0%,#232f3e 100%);color:white;padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.topbar .logo{font-weight:700;font-size:15px;letter-spacing:.5px}
+.topbar a{color:#ccc;text-decoration:none;padding:5px 12px;border-radius:6px;font-size:13px;transition:all .2s}
+.topbar a:hover{background:rgba(255,255,255,.1);color:#fff}
+.topbar a.active{background:#e94560;color:white}
+
+/* Filters bar */
+.filters{background:white;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #d5d9d9;position:sticky;top:48px;z-index:99}
+.filters select,.filters input{padding:6px 10px;border:1px solid #d5d9d9;border-radius:6px;font-size:13px;background:white}
+.filters input{width:160px}
+.filters .badge{background:#e94560;color:white;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.filters .stat{color:#555;font-size:12px}
+.filters .stat strong{color:#0f1111}
+
+/* Card */
+.card{background:white;border:1px solid #d5d9d9;border-radius:10px;overflow:hidden;margin:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card-header{background:#fafafa;padding:10px 16px;font-weight:600;border-bottom:1px solid #e6e8ea;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+
+/* Product row */
+.prod-row{padding:12px 16px;border-bottom:1px solid #f0f2f2;display:grid;grid-template-columns:44px auto 1fr auto auto;gap:14px;align-items:center;transition:background .15s;cursor:pointer}
+.prod-row:hover{background:#f7fafc}
+.prod-row.active{background:#effaff;border-left:3px solid #007185}
+.prod-row:last-child{border-bottom:none}
+.rank{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.rank-1{background:linear-gradient(135deg,#ffd700,#f5c518);color:#000;box-shadow:0 2px 6px rgba(255,215,0,.4)}
+.rank-2{background:linear-gradient(135deg,#c0c0c0,#b0b0b0);color:#000;box-shadow:0 2px 6px rgba(192,192,192,.3)}
+.rank-3{background:linear-gradient(135deg,#cd7f32,#b8860b);color:white;box-shadow:0 2px 6px rgba(205,127,50,.3)}
+.rank-default{background:#e6e8ea;color:#555}
+.info .kw{font-weight:600;font-size:13px;color:#007185;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.info .kw a{color:#007185;text-decoration:none}
+.info .kw a:hover{color:#c45500;text-decoration:underline}
+.info .title{font-size:12px;color:#555;line-height:1.4;margin:3px 0;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.info .meta{font-size:11px;color:#999;margin-top:2px}
+.price{color:#B12704;font-weight:700;font-size:15px;text-align:right;min-width:60px}
+.score-pill{display:inline-flex;align-items:center;gap:4px;background:#067d62;color:white;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
+.score-pill.high{background:#067d62}
+.score-pill.mid{background:#c89411}
+.score-pill.low{background:#b12704}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;background:#f0f8ff;color:#067d62;border:1px solid #ceead6;margin:1px}
+.tag.red{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.tag.gold{background:#fffbeb;color:#92400e;border-color:#fde68a}
+
+/* Summary bar */
+.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;padding:14px 16px;background:linear-gradient(135deg,#fafafa,#f0f2f2)}
+.summary .num{font-size:20px;font-weight:700;color:#0f1111}
+.summary .lb{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.summary .icon{font-size:18px}
+
+/* Detail panel */
+.detail-panel{display:none;background:#fafafa;padding:16px 16px 12px;border-bottom:1px solid #e6e8ea;grid-column:1/-1}
+.detail-panel.open{display:block}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #eee;font-size:12px}
+.detail-item .label{color:#777}
+.detail-item .value{font-weight:600;color:#0f1111}
+.mt-2{margin-top:8px}
+
+/* Grid view toggle */
+.view-toggle{display:flex;gap:6px}
+.view-toggle button{padding:4px 10px;border:1px solid #d5d9d9;background:white;border-radius:6px;cursor:pointer;font-size:12px;transition:all .15s}
+.view-toggle button.active{background:#232f3e;color:white;border-color:#232f3e}
+.view-toggle button:hover:not(.active){background:#f5f5f5}
+
+.loading{text-align:center;padding:40px;color:#999}
+
+/* Boost chart */
+.chart-bar{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:11px}
+.chart-bar .bar{height:6px;border-radius:3px;background:linear-gradient(90deg,#067d62,#059669);transition:width .3s}
+.chart-bar .bar.red{background:linear-gradient(90deg,#dc2626,#ef4444)}
+
+/* Responsive */
+@media(max-width:768px){
+  .filters{top:44px;padding:8px 10px}
+  .filters input{width:100px}
+  .summary{grid-template-columns:repeat(3,1fr)}
+  .detail-grid{grid-template-columns:1fr}
+  .prod-row{grid-template-columns:32px auto 1fr;gap:8px}
+  .prod-row .price{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">🎯 CrossMart Selector</span>
+  <a href="selection.html" class="active">选品推荐</a>
+  <a href="https://charlescome1995-prog.github.io/crossmart-monitor/frontend/monitor.html" target="_blank">监控面板 ↗</a>
+</div>
+
+<div class="filters" id="filters">
+  <span class="stat"><strong id="totalCount">0</strong> products</span>
+  <span class="badge" id="dataDate">—</span>
+  <select id="strategyFilter" onchange="applyFilters()">
+    <option value="all">全部策略</option>
+    <option value="blue">蓝海</option>
+    <option value="red">红海</option>
+    <option value="diff">差异化</option>
+    <option value="follow">跟随</option>
+  </select>
+  <select id="sortFilter" onchange="applyFilters()">
+    <option value="score">排序: 综合评分 ↓</option>
+    <option value="margin">排序: 毛利率 ↓</option>
+    <option value="price">排序: 价格 ↓</option>
+    <option value="profit">排序: 利润 ↓</option>
+    <option value="reviews">排序: 评论数 ↑</option>
+  </select>
+  <input type="text" id="searchInput" placeholder="🔍 搜索关键词/ASIN..." oninput="applyFilters()">
+  <div class="view-toggle">
+    <button class="active" onclick="setView('list')" id="viewList">列表</button>
+    <button onclick="setView('grid')" id="viewGrid">卡片</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="loading">⏳ 加载数据中...</div>
+</div>
+
+<script>
+let allProducts = [];
+let currentView = 'list';
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('viewList').className = v === 'list' ? 'active' : '';
+  document.getElementById('viewGrid').className = v === 'grid' ? 'active' : '';
+  applyFilters();
+}
+
+function getScoreClass(score) {
+  if (score >= 85) return 'high';
+  if (score >= 70) return 'mid';
+  return 'low';
+}
+
+function rankClass(rank) {
+  if (rank === 1) return 'rank-1';
+  if (rank === 2) return 'rank-2';
+  if (rank === 3) return 'rank-3';
+  return 'rank-default';
+}
+
+function displayNumber(n, suffix = '') {
+  if (!n && n !== 0) return '-';
+  return n.toLocaleString() + suffix;
+}
+
+function detailHTML(p) {
+  const pct = (v) => (v || v === 0) ? (v * 100).toFixed(1) + '%' : '-';
+  const num = (v) => (v || v === 0) ? Number(v).toLocaleString() : '-';
+  const rankTrend = (p.rank_change_rate > 0) ? '📈上升' : (p.rank_change_rate < 0 ? '📉下降' : '→持平');
+  return `<div class="detail-grid">
+    <div><div class="detail-item"><span class="label">策略</span><span class="value">${p.strategy || '-'}</span></div>
+    <div class="detail-item"><span class="label">综合评分</span><span class="value">${p.score} (指标通过${p.pass_rate}%)</span></div>
+    <div class="detail-item"><span class="label">预估毛利率</span><span class="value">${p.margin}%</span></div>
+    <div class="detail-item"><span class="label">单件利润</span><span class="value">$${p.profit}</span></div>
+    <div class="detail-item"><span class="label">售价</span><span class="value">$${p.price}</span></div>
+    <div class="detail-item"><span class="label">评分</span><span class="value">${p.rating ? '⭐' + p.rating : '-'} (${num(p.reviews)}评论)</span></div>
+    <div class="detail-item"><span class="label">月搜量</span><span class="value">${num(p.monthly_search)}</span></div>
+    <div class="detail-item"><span class="label">月购买</span><span class="value">${num(p.monthly_purchase)}</span></div>
+    <div class="detail-item"><span class="label">广告竞品数</span><span class="value">${num(p.sellers)}</span></div>
+    <div class="detail-item"><span class="label">SPR</span><span class="value">${num(p.spr)}</span></div>
+    <div class="detail-item"><span class="label">需供比</span><span class="value">${p.need_supply || '-'}</span></div>
+    <div class="detail-item"><span class="label">PCP竞价</span><span class="value">$${p.pcp_price || '-'}</span></div>
+    <div class="detail-item"><span class="label">转化集中度</span><span class="value">${pct(p.conv_conc)}</span></div>
+    <div class="detail-item"><span class="label">点击集中度</span><span class="value">${pct(p.click_conc)}</span></div>
+    <div class="detail-item"><span class="label">排名变化</span><span class="value">${num(p.rank_earliest)} → ${num(p.rank_latest)} ${rankTrend}</span></div>
+    <div class="detail-item"><span class="label">季节性</span><span class="value">${p.seasonal ? '⚠️季节性' : '✅常规'}</span></div>
+    <div class="detail-item"><span class="label">热点</span><span class="value">${p.trending ? '🔥热点' : '✅稳定'}</span></div>
+    ${p.category ? '<div class="detail-item" style="grid-column:1/-1"><span class="label">品类</span><span class="value">' + p.category + '</span></div>' : ''}
+    ${p.scene ? '<div class="detail-item" style="grid-column:1/-1"><span class="label">用户场景</span><span class="value">' + p.scene + '</span></div>' : ''}
+    ${p.category_note ? '<div class="detail-item" style="grid-column:1/-1"><span class="label">备注</span><span class="value">' + p.category_note + '</span></div>' : ''}
+    <div class="detail-item" style="grid-column:1/-1"><span class="label">链接</span><span class="value"><a href="${p.url || ('https://www.amazon.com/s?k=' + encodeURIComponent(p.keyword||''))}" target="_blank" style="color:#007185">亚马逊搜索 ↗</a></span></div>
+    </div>
+  </div>`;
+}
+
+function productRow(p, idx) {
+  const isActive = window._activeIdx === idx;
+  const sc = getScoreClass(p.score);
+  const scoreLabel = p.score >= 85 ? '🔥 强烈推荐' : p.score >= 70 ? '⚡ 可以考虑' : '👀 观察';
+  return '<div class="prod-row' + (isActive ? ' active' : '') + '" onclick="toggleDetail(' + idx + ')">' +
+    '<div class="rank ' + rankClass(p.rank) + '">#' + p.rank + '</div>' +
+    '<div class="info">' +
+      '<div class="kw">' +
+        (p.keyword || '—') +
+        ' <a href="https://www.amazon.com/s?k=' + encodeURIComponent(p.keyword || '') + '" target="_blank">🔍</a>' +
+        ' <span class="score-pill ' + sc + '">' + p.score + ' ' + scoreLabel + '</span>' +
+      '</div>' +
+      '<div class="title">' + (p.category || p.scene || '—') + '</div>' +
+      '<div class="meta">' +
+        (p.strategy ? '<span class="tag" style="background:#e7f0ff;color:#0a58ca">' + p.strategy + '</span>' : '') +
+        '<span class="tag">⭐' + (p.rating || '-') + '</span>' +
+        '<span class="tag">💬' + displayNumber(p.reviews) + '</span>' +
+        '<span class="tag">📦' + (p.sellers || '-') + '竞品</span>' +
+        '<span class="tag gold">💰$' + (p.profit || '0') + '/件</span>' +
+        (p.margin >= 25 ? '<span class="tag">📈' + p.margin + '%</span>' : '<span class="tag red">📉' + p.margin + '%</span>') +
+        (p.monthly_search ? '<span class="tag">🔍' + displayNumber(p.monthly_search) + '/月</span>' : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="price">$' + (p.price || '-') + '</div>' +
+    (isActive ? '<div class="detail-panel open">' + detailHTML(p) + '</div>' : '') +
+  '</div>';
+}
+
+function productCard(p, idx) {
+  const sc = getScoreClass(p.score);
+  const scoreLabel = p.score >= 85 ? '🔥' : p.score >= 70 ? '⚡' : '👀';
+  return '<div class="card" style="cursor:pointer" onclick="toggleDetail(' + idx + ')">' +
+    '<div style="padding:12px;display:flex;gap:12px;align-items:flex-start">' +
+      '<div class="rank ' + rankClass(p.keyword ? p.rank : p.rank + 100) + '" style="width:32px;height:32px;font-size:11px;flex-shrink:0">#' + p.rank + '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-weight:600;font-size:13px;color:#007185">' + (p.keyword || '—') + '</div>' +
+        '<div style="font-size:11px;color:#555;margin:2px 0;line-height:1.3">' + (p.strategy ? p.strategy + ' · ' : '') + (p.category ? p.category.substring(0,40) : (p.scene || '—')) + '</div>' +
+        '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">' +
+          '<span class="score-pill ' + sc + '" style="font-size:10px;padding:2px 7px">' + scoreLabel + ' ' + p.score + '</span>' +
+          '<span class="tag" style="font-size:10px">$' + (p.price||'-') + '</span>' +
+          '<span class="tag" style="font-size:10px">💰$' + (p.profit||'0') + '</span>' +
+          '<span class="tag" style="font-size:10px">📈' + (p.margin||'0') + '%</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+let _activeIdx = -1;
+
+function toggleDetail(idx) {
+  if (_activeIdx === idx) {
+    _activeIdx = -1;
+  } else {
+    _activeIdx = idx;
+  }
+  applyFilters();
+}
+
+function applyFilters() {
+  const strategy = document.getElementById('strategyFilter').value;
+  const sortBy = document.getElementById('sortFilter').value;
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+
+  let filtered = [...allProducts];
+
+  // Strategy filter (中文策略值映射)
+  const stratMap = { blue: '蓝海', red: '红海', diff: '差异化', follow: '跟随' };
+  if (strategy && strategy !== 'all' && stratMap[strategy]) {
+    filtered = filtered.filter(p => p.strategy === stratMap[strategy]);
+  }
+
+  // Search
+  if (search) {
+    filtered = filtered.filter(p =>
+      (p.keyword || '').toLowerCase().includes(search) ||
+      (p.ASIN || '').toLowerCase().includes(search) ||
+      (p.title || '').toLowerCase().includes(search)
+    );
+  }
+
+  // Sort
+  const sortMap = {
+    'score': (a,b) => (b.score || 0) - (a.score || 0),
+    'margin': (a,b) => (b.margin || 0) - (a.margin || 0),
+    'price': (a,b) => (b.price || 0) - (a.price || 0),
+    'profit': (a,b) => (b.profit || 0) - (a.profit || 0),
+    'reviews': (a,b) => (a.reviews || 0) - (b.reviews || 0),
+  };
+  filtered.sort(sortMap[sortBy] || sortMap['score']);
+
+  // Re-rank
+  filtered.forEach((p, i) => p.rank = i + 1);
+
+  // Summary
+  const highScore = filtered.filter(p => p.score >= 85).length;
+  const highMargin = filtered.filter(p => p.margin >= 25).length;
+  const totalProfit = filtered.reduce((s, p) => s + (p.profit || 0), 0);
+
+  document.getElementById('totalCount').textContent = filtered.length;
+  document.querySelector('.badge').textContent =
+    `${highScore}🔥高评分 | ${highMargin}📈高毛利 | ~$${totalProfit.toFixed(0)}总利润/件`;
+
+  // Render
+  const container = document.getElementById('app');
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="card"><div class="card-header">没有匹配的产品</div><div style="padding:20px;text-align:center;color:#999">试试调整筛选条件</div></div>';
+    return;
+  }
+
+  if (currentView === 'list') {
+    container.innerHTML = `
+      <div class="summary">
+        <div><div class="num" style="color:#067d62">${filtered.length}</div><div class="lb"><span class="icon">📦</span> 推荐产品</div></div>
+        <div><div class="num" style="color:#c89411">${highScore}</div><div class="lb"><span class="icon">🔥</span> 强推荐(≥85)</div></div>
+        <div><div class="num" style="color:#059669">${highMargin}</div><div class="lb"><span class="icon">💰</span> 高毛利(≥25%)</div></div>
+        <div><div class="num">${filtered.reduce((s,p) => s + (p.reviews||0), 0).toLocaleString()}</div><div class="lb"><span class="icon">💬</span> 总评论</div></div>
+        <div><div class="num" style="color:#b12704">$${totalProfit.toFixed(0)}</div><div class="lb"><span class="icon">📊</span> 单件总利润</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>🏆 选品推荐 Top ${filtered.length}</span>
+          <span style="font-size:11px;color:#999">点击展开详情</span>
+        </div>
+        ${filtered.map((p, i) => productRow(p, i)).join('')}
+      </div>`;
+  } else {
+    // Grid view
+    container.innerHTML = `
+      <div class="summary">
+        <div><div class="num" style="color:#067d62">${filtered.length}</div><div class="lb">📦 推荐产品</div></div>
+        <div><div class="num" style="color:#c89411">${highScore}</div><div class="lb">🔥 强推荐</div></div>
+        <div><div class="num" style="color:#059669">${highMargin}</div><div class="lb">💰 高毛利</div></div>
+        <div><div class="num">$${totalProfit.toFixed(0)}</div><div class="lb">💵 总单件利润</div></div>
+        <div><div class="num" style="color:#b12704">${filtered.reduce((s,p) => s + (p.profit||0) * 300, 0).toFixed(0)}</div><div class="lb">📊 首单利润(300件)</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;padding:0 16px 16px">
+        ${filtered.map((p, i) => productCard(p, i)).join('')}
+      </div>`;
+  }
+}
+
+async function load() {
+  try {
+    const r = await fetch('data/selection-data.json?' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    allProducts = data.products || [];
+    const date = data.generated || '';
+    document.getElementById('dataDate').textContent = date ? date.substring(0,10) : '—';
+    applyFilters();
+  } catch(e) {
+    document.getElementById('app').innerHTML =
+      '<div class="card"><div class="card-header">⚠️ 数据加载失败</div><div style="padding:20px;text-align:center;color:#999">' +
+      '请确保 selection-data.json 存在<br><span style="font-size:11px">' + e.message + '</span></div></div>';
+  }
+}
+load();
+</script>
+</body>
+</html>
