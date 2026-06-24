@@ -68,7 +68,7 @@ DEPLOY_DIR = os.path.join(BASE_DIR, "deploy")
 # -------------------------- 调研模式配置 --------------------------
 RESEARCH_MODE = {
     "data_source": "api",  
-    "serpapi_key": "f38bc9f00247c4bd38f59d676a3a29c5458e34f1ebb82c304aeb33cdd45a5aba",
+    "serpapi_key": os.environ.get("SERPAPI_KEY", "").strip(),
     "serpapi_endpoint": "https://serpapi.com/search",
     "local_asin_file": "asin_data.xlsx"
 }
@@ -349,11 +349,13 @@ RESEARCH_CONFIG = {
 # -------------------------- AI API配置（文本分析） --------------------------
 # 支持多种AI服务，按需启用，优先级从上到下
 
+import os as _os_cfg
+
 AI_CONFIG = {
-    # DeepSeek API - 推荐使用，高性价比
+    # DeepSeek API - 余额不足已弃用（保留配置，key 走环境变量）
     "deepseek": {
         "enabled": True,  # 启用
-        "api_key": "sk-2c7ded8b917c46ed9f9725e670070f1b",
+        "api_key": _os_cfg.environ.get("DEEPSEEK_API_KEY", "").strip(),
         "base_url": "https://api.deepseek.com/v1",
         "model": "deepseek-chat",
         "max_tokens": 4096,
@@ -363,7 +365,7 @@ AI_CONFIG = {
     # Google Gemini API
     "gemini": {
         "enabled": True,
-        "api_key": "AIzaSyDojnjSP5_kT6geHXk806aASEvLprhf3s",
+        "api_key": _os_cfg.environ.get("GEMINI_API_KEY", "").strip(),
         "model": "gemini-pro",
         "max_tokens": 4096,
         "temperature": 0.7,
@@ -372,7 +374,7 @@ AI_CONFIG = {
     # Kimi API (Moonshot AI)
     "kimi": {
         "enabled": True,  # 启用
-        "api_key": "sk-8guvjOPLxNsGSvInjBvmnqGRmLuTTLKXlErJoqRcrm7qQ2GS",
+        "api_key": _os_cfg.environ.get("KIMI_API_KEY", "").strip(),
         "base_url": "https://api.moonshot.cn/v1",
         "model": "moonshot-v1-8k",
         "max_tokens": 4096,
@@ -382,7 +384,7 @@ AI_CONFIG = {
     # 火山方舟 (Volcano Ark) - runtime 同款，ARK_API_KEY 环境变量读取，OpenAI 兼容协议
     "volcano": {
         "enabled": True,
-        "api_key": __import__('os').environ.get("ARK_API_KEY", "").strip(),
+        "api_key": _os_cfg.environ.get("ARK_API_KEY", "").strip(),
         "base_url": "https://ark.cn-beijing.volces.com/api/coding/v3",
         "model": "ark-code-latest",
         "max_tokens": 4096,
