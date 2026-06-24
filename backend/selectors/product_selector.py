@@ -425,7 +425,7 @@ def call_llm_for_analysis(keyword, row_data=None):
 
 关键词：{keyword}
 
-请分析以下3个维度的风险和机会（每个维度100字以内）：
+请分析以下4个维度的风险和机会（每个维度100字以内）：
 
 1. **季节性风险**：
    - 这个关键词是否季节性产品？
@@ -442,6 +442,12 @@ def call_llm_for_analysis(keyword, row_data=None):
    - 如果有强势品牌，新进入者是否有差异化机会？
    - 该关键词是否处于品牌格局变化期（窗口期）？
 
+4. **差异化切入点**（核心）：
+   - 从【人群法】角度：这个产品主要服务哪类人群？有没有被忽视的细分人群？
+   - 从【场景法】角度：有哪些高频使用场景？竞品没覆盖到的场景是什么？
+   - 从【竞品对比】角度：现有竞品普遍的短板/差评痛点可能是什么？新卖家可以从哪个具体功能或卖点切入？
+   - 给出1个最可执行的差异化切入建议（如"主打XX人群+XX场景，强化XX功能"）。
+
 请用以下JSON格式返回（只返回JSON，不要其他内容）：
 {{
     "is_seasonal": true/false,
@@ -453,11 +459,16 @@ def call_llm_for_analysis(keyword, row_data=None):
     "has_brand_competition": true/false,
     "brand_detail": "品牌竞争分析原因（50字以内）",
     "brand_window": "是否窗口期，分析原因（30字以内）",
+    "target_audience": "核心人群+被忽视的细分人群（40字以内）",
+    "key_scenarios": "高频场景+竞品未覆盖场景（40字以内）",
+    "competitor_gap": "竞品普遍短板/差评痛点（40字以内）",
+    "entry_suggestion": "1个最可执行的差异化切入建议（50字以内）",
     "overall_reason": "综合分析理由（100字以内）"
 }}"""
     
     try:
         import requests
+        import time as _time
         
         headers = {
             "Content-Type": "application/json",
@@ -470,21 +481,31 @@ def call_llm_for_analysis(keyword, row_data=None):
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.3,
-            "max_tokens": 800
+            "max_tokens": 2000
         }
         
-        response = requests.post(
-            f"{base_url}/chat/completions",
-            headers=headers,
-            json=data,
-            timeout=30
-        )
+        # 火山方舟偏发限流(429)/长 prompt 偶发空返回，最多重试 3 次
+        content = ''
+        response = None
+        for _attempt in range(3):
+            response = requests.post(
+                f"{base_url}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=40
+            )
+            if response.status_code == 429:
+                _time.sleep(3 + _attempt * 3)  # 退避重试
+                continue
+            if response.status_code == 200:
+                content = (response.json()['choices'][0]['message']['content'] or '').strip()
+                if content:
+                    break
+                _time.sleep(2)  # 空返回，稍等重试
+            else:
+                break
         
-        if response.status_code == 200:
-            result = response.json()
-            content = result['choices'][0]['message']['content']
-            
-            # 解析JSON响应
+        if response is not None and response.status_code == 200 and content:
             import json
             import re
             
@@ -501,6 +522,8 @@ def call_llm_for_analysis(keyword, row_data=None):
                     reasons.append(f"🔥热点:{analysis.get('trending_future', '')}")
                 if analysis.get('has_brand_competition'):
                     reasons.append(f"🏢品牌:{analysis.get('brand_window', '')}")
+                if analysis.get('entry_suggestion'):
+                    reasons.append(f"🎯切入:{analysis.get('entry_suggestion', '')}")
                 if not reasons:
                     reasons.append("✅常规产品")
                 
@@ -696,7 +719,7 @@ TEST_MODE = False  # True=测试模式，False=全量运行
 TEST_COUNT = 99    # 测试模式处理的关键词数量
 
 # LLM分析开关
-LLM_ANALYSIS_ENABLED = False  # True=启用LLM分析，False=使用关键词匹配
+LLM_ANALYSIS_ENABLED = True  # True=启用LLM分析（火山方舟 ark-code-latest），False=使用关键词匹配
 
 # LLM分析缓存（避免重复调用）
 llm_cache = {}

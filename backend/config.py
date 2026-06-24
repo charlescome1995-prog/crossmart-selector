@@ -378,9 +378,19 @@ AI_CONFIG = {
         "max_tokens": 4096,
         "temperature": 0.7,
     },
-    
+
+    # 火山方舟 (Volcano Ark) - runtime 同款，ARK_API_KEY 环境变量读取，OpenAI 兼容协议
+    "volcano": {
+        "enabled": True,
+        "api_key": __import__('os').environ.get("ARK_API_KEY", "").strip(),
+        "base_url": "https://ark.cn-beijing.volces.com/api/coding/v3",
+        "model": "ark-code-latest",
+        "max_tokens": 4096,
+        "temperature": 0.3,
+    },
+
     # 默认使用的AI服务
-    "default_provider": "deepseek",  # 可选: deepseek, gemini, kimi
+    "default_provider": "volcano",  # 可选: volcano, deepseek, gemini, kimi（deepseek 余额不足已弃用，统一走火山方舟）
 }
 
 # -------------------------- API配置（第三方工具） --------------------------
