@@ -75,11 +75,22 @@ RESEARCH_MODE = {
 
 # -------------------------- 选品规则配置 --------------------------
 SELECTION_RULES = {
-    # 黑名单类目
+    # 黑名单类目（2026-06-30 调整）
+    # 原则：液体/膏体/涂抹 不再是黑名单（会误杀大量美妆）
+    # 黑名单仅保留：易碎 + 大件 + 情趣用品 + 高风险类
     "category_blacklist": [
-        "液体", "膏体", "涂抹", "食品", "健康", "护理",
-        "医疗", "刀具", "武器", "电池", "充电器",
-        "蓝牙", "无线", "儿童", "玩具", "母婴", "假发", "人法", "香水"
+        # 易碎类
+        "glass", "玻璃", "镜子", "mirror", "ceramic", "陶瓷",
+        "crystal", "水晶", "porcelain",
+        # 大件类
+        "furniture", "家具", "mattress", "床垫", "sofa", "沙发",
+        "衣柜", "wardrobe", "书架", "bookshelf", "货架", "shelving",
+        # 情趣用品类
+        "sex", "adult toy", "lingerie", "vibrator", "情趣", "成人",
+        # 高风险保留项
+        "食品", "医疗", "刀具", "武器", "电池", "充电器",
+        "蓝牙", "无线", "儿童", "玩具", "母婴", "假发",
+        "香水", "perfume",
     ],
     
     # ---------- 16个核心指标相关配置 ----------
@@ -127,8 +138,14 @@ SELECTION_RULES = {
     
     # 11. 品牌垄断检测关键词
     "brand_monopoly_keywords": [
-        "apple", "samsung", "sony", "lg", " Bose", "JBL", "dyson",
-        "nest", "ring", "blink", "fitbit", "garmin"
+        "apple", "samsung", "sony", "lg", "bose", "jbl", "dyson",
+        "nest", "ring", "blink", "fitbit", "garmin",
+        # 2026-06-30 扩充：高溢价品牌
+        "versace", "chanel", "gucci", "louis vuitton", "prada", "rolex",
+        "nike", "adidas", "yeezy", "jordan",
+        "stanley", "yeti",  # 杯子品牌
+        "nintendo", "playstation", "xbox", "lego",
+        "philips", "braun", "oral-b", "panasonic",
     ],
     
     # 12. 热点事件关键词
@@ -173,7 +190,7 @@ STRATEGY_CONFIG = {
     "strategy1_blue_ocean": {
         "name": "策略1_蓝海策略",
         "description": "小众市场、低竞争、高利润（来自文档：小而美挖掘法）",
-        "quota": 30,
+        "quota": 25,
         
         # ---------- 排名特征（稳定或缓慢增长） ----------
         "rank_earliest": {"min": 5000, "max": 200000},
@@ -203,7 +220,7 @@ STRATEGY_CONFIG = {
     "strategy2_red_ocean": {
         "name": "策略2_红海策略",
         "description": "成熟大市场、高销量（来自文档：挖金矿法）",
-        "quota": 30,
+        "quota": 25,
         
         # ---------- 排名特征（排名靠前且稳定） ----------
         "rank_earliest": {"max": 30000},
@@ -233,7 +250,7 @@ STRATEGY_CONFIG = {
     "strategy3_differentiation": {
         "name": "策略3_差异化策略",
         "description": "细分市场、有改进空间、排名上升（来自文档：基于真实反馈的场景重构）",
-        "quota": 30,
+        "quota": 25,
         
         # ---------- 排名特征（排名上升趋势） ----------
         "rank_earliest": {"min": 1000, "max": 150000},
@@ -291,6 +308,40 @@ STRATEGY_CONFIG = {
     },
     
     "total_quota": 100,
+}
+
+# -------------------------- 功能型/功效型优先词（2026-06-30 新增） --------------------------
+# 选品首选：功能型/功效型 > 新品/起量型 > 普通型
+# 该词表在 product_selector.py compute_score 中被读取加分
+FUNCTIONAL_KEYWORDS = [
+    # 英文功能/功效词
+    "anti", "anti-", "prevent", "reduce", "relief", "relieve", "heal", "healing",
+    "repair", "restore", "boost", "enhance", "improve", "support", "strengthen",
+    "protect", "prevention", "recovery", "detox", "cleanse", "purify",
+    "whitening", "brightening", "firming", "lifting", "tightening", "hydrating",
+    "moisturizing", "nourishing", "smoothing", "clarifying", "soothing",
+    "strengthen", "reinforce", "removal", "remove", "eliminate", "eliminator",
+    "control", "corrector", "reducer", "reduction",
+    # 中文功能词
+    "治疗", "缓解", "修复", "增强", "提升", "预防", "保护",
+    "加强", "改善", "除菌", "除螨", "除臭", "去除", "去黄", "去油",
+    "修护", "优化", "抖动", "按摩", "助眾", "助眠",
+    # 场景型功能词
+    "for sensitive", "for dry", "for oily", "for acne", "for wrinkles",
+    "for back pain", "for snoring", "for posture", "for hair growth",
+    # 工具/装置型（功能明确）
+    "organizer", "holder", "dispenser", "trimmer", "shaver",
+    "massager", "diffuser", "humidifier", "purifier", "sterilizer",
+    "detector", "monitor", "analyzer", "tracker",
+]
+
+# -------------------------- 选品优先级加分 --------------------------
+# 在综合评分上额外加分（最高 100 封顶）
+PRIORITY_BONUS = {
+    "functional": 10,        # 功能型/功效型产品加 10 分
+    "new_product": 5,        # 新品（评论数 < 500 且价格在区间）加 5 分
+    "rising_market": 5,      # 市场潜力逐步起量（排名上升 >30%）加 5 分
+    "rank_decline_kill": True,  # 排名下降 >30% 直接淘汰
 }
 
 # -------------------------- 利润计算模型 --------------------------

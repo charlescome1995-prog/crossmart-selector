@@ -23,6 +23,11 @@ import pandas as pd
 import numpy as np
 
 from config import RAW_DATA_DIR, STRATEGY_CONFIG
+try:
+    from config import FUNCTIONAL_KEYWORDS, PRIORITY_BONUS
+except ImportError:
+    FUNCTIONAL_KEYWORDS = []
+    PRIORITY_BONUS = {"functional": 0, "new_product": 0, "rising_market": 0, "rank_decline_kill": False}
 from selectors.product_selector import (
     check_16_indicators,
     calculate_profit_margin,
@@ -34,7 +39,13 @@ from selectors.product_selector import (
     analyze_5w1h_scene,
 )
 
+# 兼容新旧两种关键词列名
 KW_COL = '关键词(绿色建议进入，黄色找切入点，粉色观察)'
+def _resolve_kw_col(df):
+    global KW_COL
+    if KW_COL not in df.columns and '关键词' in df.columns:
+        KW_COL = '关键词'
+    return KW_COL
 OUTPUT_JSON = os.path.join(_THIS, '..', 'frontend', 'data', 'selection-data.json')
 
 # 策略英文名 → 前端标签
@@ -47,7 +58,7 @@ STRATEGY_LABEL = {
 
 
 def find_latest_excel():
-    """找 input 目录里最新的关键词 Excel"""
+    """找 input 目录里最新的关键词 Excel（向后兼容）"""
     os.makedirs(RAW_DATA_DIR, exist_ok=True)
     files = glob.glob(os.path.join(RAW_DATA_DIR, '*.xlsx'))
     files = [f for f in files if not os.path.basename(f).startswith('~$')]
@@ -57,12 +68,43 @@ def find_latest_excel():
     return files[0]
 
 
+def find_all_excels():
+    """找 input 目录里所有关键词 Excel（多国合并用）"""
+    os.makedirs(RAW_DATA_DIR, exist_ok=True)
+    files = glob.glob(os.path.join(RAW_DATA_DIR, '*.xlsx'))
+    files = [f for f in files if not os.path.basename(f).startswith('~$')]
+    files.sort()
+    return files
+
+
+def detect_country(filename):
+    """从文件名识别国家（ABA关键词_US20260628.xlsx → US）"""
+    import re
+    m = re.search(r'_([A-Z]{2})\d{8}', filename)
+    return m.group(1) if m else ''
+
+
+
 def normalize_date_columns(df):
     """
-    把带日期的列（每周变化）规整为引擎期望的固定列名：
-      - 4 个 \\d{8}排名 列（按日期升序）→ 20260106/13/20/27排名
-      - \\d{8}月搜 → 20260113月搜
+    把带日期的列（每周变化）规整为引擎期望的固定列名。
+    2026-06-30 增强：兼容新格式 Excel（只有 本周排名/上周排名 两列）
     """
+    # ⚠️ 新格式适配：本周排名 / 上周排名 → 4个固定排名列
+    has_legacy = '本周排名' in df.columns or '上周排名' in df.columns
+    if has_legacy:
+        df = df.copy()
+        if '上周排名' in df.columns:
+            df['20260106排名'] = pd.to_numeric(df['上周排名'], errors='coerce')
+        if '本周排名' in df.columns:
+            df['20260127排名'] = pd.to_numeric(df['本周排名'], errors='coerce')
+        if '20260106排名' in df.columns and '20260127排名' in df.columns:
+            df['20260113排名'] = ((df['20260106排名'] * 2 + df['20260127排名']) / 3).round().fillna(df['20260127排名'])
+            df['20260120排名'] = ((df['20260106排名'] + df['20260127排名'] * 2) / 3).round().fillna(df['20260127排名'])
+        if '月搜' in df.columns and '20260113月搜' not in df.columns:
+            df['20260113月搜'] = pd.to_numeric(df['月搜'], errors='coerce')
+        return df
+
     rename = {}
 
     # 排名列：找所有 \d{8}排名，按日期排序，映射到引擎固定的 4 个名
@@ -118,10 +160,51 @@ def to_numeric(df):
     return df
 
 
+def is_functional(keyword):
+    """判断是否功能型/功效型产品（命中 FUNCTIONAL_KEYWORDS 任一关键词）"""
+    if not keyword or not FUNCTIONAL_KEYWORDS:
+        return False
+    kw_lower = str(keyword).lower()
+    return any(fk.lower() in kw_lower for fk in FUNCTIONAL_KEYWORDS)
+
+
+def is_new_product(row):
+    """新品判定：评论数 < 500"""
+    rc = row.get('评分数', 0) or 0
+    try:
+        return float(rc) < 500
+    except:
+        return False
+
+
+def is_rising_market(row):
+    """市场逐步起量：排名上升 > 30%"""
+    rcr = row.get('rank_change_rate', 0) or 0
+    try:
+        return float(rcr) > 0.30
+    except:
+        return False
+
+
+def is_declining(row):
+    """排名下降 > 30%（直接淘汰）"""
+    rcr = row.get('rank_change_rate', 0) or 0
+    try:
+        return float(rcr) < -0.30
+    except:
+        return False
+
+
 def compute_score(row, indicators, margin):
     """
     综合评分 0-100（前端用：≥85🔥强推 / ≥70⚡考虑 / 其余👀观察）
-    权重：16指标通过率 40% + 毛利率 25% + 市场热度 20% + 竞争宽松度 15%
+    基础权重：16指标通过率 40% + 毛利率 25% + 市场热度 20% + 竞争宽松度 15%
+    
+    2026-06-30 新增加分：
+      - 功能型/功效型产品：+10 分
+      - 新品（评论数<500）：+5 分
+      - 排名上升 >30%（市场逐步起量）：+5 分
+    总分封顶 100。
     """
     # 1. 指标通过率（0-100）
     pass_score = indicators.get('pass_rate', 0)
@@ -137,7 +220,19 @@ def compute_score(row, indicators, margin):
     pc = row.get('广告竞品数', 0) or 0
     comp_score = max(0, 1 - pc / 150) * 100
 
-    score = pass_score * 0.4 + margin_score * 0.25 + heat_score * 0.2 + comp_score * 0.15
+    base_score = pass_score * 0.4 + margin_score * 0.25 + heat_score * 0.2 + comp_score * 0.15
+
+    # 5. 优先级加分
+    keyword = row.get('关键词(绿色建议进入，黄色找切入点，粉色观察)', '')
+    bonus = 0
+    if is_functional(keyword):
+        bonus += PRIORITY_BONUS.get('functional', 10)
+    if is_new_product(row):
+        bonus += PRIORITY_BONUS.get('new_product', 5)
+    if is_rising_market(row):
+        bonus += PRIORITY_BONUS.get('rising_market', 5)
+
+    score = min(base_score + bonus, 100)
     return round(score, 1)
 
 
@@ -146,17 +241,31 @@ def run():
     print('CrossMart Selector - 选品引擎')
     print('=' * 70)
 
-    excel = find_latest_excel()
-    if not excel:
+    excels = find_all_excels()
+    if not excels:
         print(f'❌ 未找到 Excel，请把卖家精灵导出文件放到：\n   {RAW_DATA_DIR}')
         return 1
-    print(f'📥 读取: {os.path.basename(excel)}')
 
-    df = pd.read_excel(excel)
-    print(f'   原始行数: {len(df):,}')
+    dfs = []
+    for excel in excels:
+        country = detect_country(os.path.basename(excel))
+        print(f'📥 读取: {os.path.basename(excel)} ({country or "未知"})')
+        sub_df = pd.read_excel(excel)
+        print(f'   原始行数: {len(sub_df):,}')
+        sub_df = normalize_date_columns(sub_df)
+        _resolve_kw_col(sub_df)
+        sub_df['_country'] = country
+        dfs.append(sub_df)
 
-    df = normalize_date_columns(df)
+    df = pd.concat(dfs, ignore_index=True)
+    print(f'   合并行数: {len(df):,}')
+    # 2026-06-30 新增：合并后按 (国家, 关键词) 去重
+    kw_col = '关键词' if '关键词' in df.columns else KW_COL
+    before = len(df)
+    df = df.drop_duplicates(subset=[kw_col, '_country'], keep='first').reset_index(drop=True)
+    print(f'   去重后行数: {len(df):,}（剔除 {before - len(df):,} 条重复）')
     df = to_numeric(df)
+    excel = excels[-1]  # 仅供 source_file 显示
 
     # 排名变化
     df['rank_earliest'] = df.get('20260106排名')
@@ -171,6 +280,33 @@ def run():
     df = df[(df['rank_earliest'] > 0) & (df['rank_latest'] > 0)].copy()
     df = df.dropna(subset=['20260113月搜', '广告竞品数', '价格（美元）'])
     print(f'   有效行数: {len(df):,}')
+
+    # 2026-06-30 新增：强制过滤大品牌词
+    from config import SELECTION_RULES
+    brand_words = [b.strip().lower() for b in SELECTION_RULES.get('brand_monopoly_keywords', [])]
+    if brand_words:
+        kw_col_local = '关键词' if '关键词' in df.columns else KW_COL
+        brand_mask = df[kw_col_local].astype(str).str.lower().apply(
+            lambda x: any(b in x for b in brand_words if b))
+        before = len(df)
+        df = df[~brand_mask].reset_index(drop=True)
+        print(f'   过滤大品牌后: {len(df):,}（剔除 {before - len(df):,} 条品牌词）')
+
+    # 2026-06-30 新增：强制过滤黑名单类目（易碎/大件/情趣等）
+    blacklist = [b.strip().lower() for b in SELECTION_RULES.get('category_blacklist', [])]
+    if blacklist:
+        kw_col_local = '关键词' if '关键词' in df.columns else KW_COL
+        # 检查关键词 + 品类组一两个字段
+        check_cols = [kw_col_local]
+        if '品类组一' in df.columns:
+            check_cols.append('品类组一')
+        bl_mask = pd.Series([False] * len(df))
+        for c in check_cols:
+            bl_mask |= df[c].astype(str).str.lower().apply(
+                lambda x: any(b in x for b in blacklist if b))
+        before = len(df)
+        df = df[~bl_mask].reset_index(drop=True)
+        print(f'   过滤黑名单类目后: {len(df):,}（剔除 {before - len(df):,} 条）')
 
     # 4 策略筛选
     print('\n执行 4 策略筛选...')
@@ -213,6 +349,10 @@ def run():
 
         # 过滤食品类
         if priority == '❌过滤':
+            continue
+
+        # 2026-06-30 新增：排名下降 > 30% 直接淘汰
+        if PRIORITY_BONUS.get('rank_decline_kill') and is_declining(row):
             continue
 
         score = compute_score(row, indicators, margin)
@@ -259,6 +399,10 @@ def run():
             'pass_rate': round(indicators.get('pass_rate', 0), 0),
             'seasonal': bool(is_seasonal(keyword)),
             'trending': bool(is_trending(keyword)),
+            'functional': bool(is_functional(keyword)),
+            'is_new': bool(is_new_product(row)),
+            'rising_market': bool(is_rising_market(row)),
+            'country': str(row.get('_country', '')) if pd.notna(row.get('_country', '')) else '',
             'category_note': note,
             'scene': scene.get('who', '') + '/' + scene.get('where', ''),
         })
@@ -268,7 +412,7 @@ def run():
 
     out = {
         'generated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'source_file': os.path.basename(excel),
+        'source_file': ', '.join([os.path.basename(e) for e in excels]),
         'total': len(products),
         'strategy_dist': _dist(products, 'strategy'),
         'products': products,
