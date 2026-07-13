@@ -430,6 +430,41 @@ def run():
         avg_margin = sum(p['margin'] for p in products) / len(products)
         print(f'   平均评分: {avg_score:.1f} | 平均毛利: {avg_margin:.1f}%')
         print(f'   Top3: ' + ' / '.join(p['keyword'][:20] for p in products[:3]))
+
+    # ── 推送到 CrossMart Hub ─────────────────────────────────────
+    try:
+        import datetime as _dt
+        from push_to_hub import push_to_hub
+        _payload = {
+            'schema_version': 'v1',
+            'generated_at': _dt.datetime.now(
+                _dt.timezone(_dt.timedelta(hours=8))
+            ).isoformat(timespec='seconds'),
+            'source': 'crossmart-selector',
+            'week': _dt.datetime.now().strftime('%Y-W%V'),
+            'total': len(products),
+            'strategy_dist': out['strategy_dist'],
+            'items': [
+                {
+                    'keyword': p['keyword'],
+                    'country': p.get('country', ''),
+                    'strategy': p.get('strategy', ''),
+                    'score': p['score'],
+                    'margin': p.get('margin'),
+                    'price': p.get('price'),
+                    'monthly_search': p.get('monthly_search'),
+                    'rank_earliest': p.get('rank_earliest'),
+                    'rank_latest': p.get('rank_latest'),
+                    'rank_change_rate': p.get('rank_change_rate'),
+                }
+                for p in products
+            ],
+        }
+        push_to_hub('selection.json', _payload)
+        print('🌐 已同步到 crossmart-hub/data/selection.json')
+    except Exception as e:
+        print(f'⚠️ Hub 同步失败（不阻塞主流程）: {e}')
+
     return 0
 
 
