@@ -5,6 +5,7 @@ backend/data/output/
 # --- processed 缓存（每次跑重新生成）---
 backend/processed/_archive/
 backend/processed/cache/
+backend/processed/quick_filter/*.json
 backend/cache/
 
 # --- 一次性脚本 / 日志 ---
