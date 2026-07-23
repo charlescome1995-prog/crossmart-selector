@@ -79,6 +79,30 @@ body{font-family:"Times New Roman",Times,"PingFang SC","Microsoft YaHei",serif;b
 .chart-bar .bar{height:6px;border-radius:3px;background:linear-gradient(90deg,#067d62,#059669);transition:width .3s}
 .chart-bar .bar.red{background:linear-gradient(90deg,#dc2626,#ef4444)}
 
+/* Quick-pick section */
+.qp-section{background:linear-gradient(135deg,#fff8e1,#fff3cd);border:1px solid #fbbf24;border-radius:10px;margin:12px 16px;overflow:hidden;box-shadow:0 2px 6px rgba(251,191,36,.15)}
+.qp-header{background:#fef3c7;padding:12px 16px;font-weight:600;font-size:14px;color:#78350f;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #fde68a}
+.qp-header .qp-count{background:#f59e0b;color:white;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.qp-tabs{display:flex;gap:4px;padding:8px 16px;background:#fef9e7;border-bottom:1px solid #fde68a;flex-wrap:wrap}
+.qp-tab{padding:4px 12px;border-radius:14px;font-size:12px;cursor:pointer;background:white;border:1px solid #fbbf24;color:#78350f;transition:all .15s;user-select:none}
+.qp-tab:hover{background:#fff3cd}
+.qp-tab.active{background:#f59e0b;color:white;border-color:#f59e0b;font-weight:600}
+.qp-list{padding:8px 16px 14px}
+.qp-row{display:grid;grid-template-columns:36px 1fr auto auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed #fde68a;font-size:12px;cursor:pointer}
+.qp-row:hover{background:#fffbeb}
+.qp-row:last-child{border-bottom:none}
+.qp-rank{font-weight:700;color:#92400e;font-size:13px;background:#fde68a;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qp-kw{color:#007185;font-weight:600;word-break:break-word;min-width:0}
+.qp-kw a{color:#007185;text-decoration:none;margin-left:6px;font-size:11px}
+.qp-kw a:hover{color:#c45500;text-decoration:underline}
+.qp-cat{font-size:10px;color:#777;margin-top:2px;font-weight:400}
+.qp-metric{display:flex;flex-direction:column;align-items:center;min-width:54px;font-size:11px}
+.qp-metric .v{font-weight:700;color:#0f1111;font-size:13px}
+.qp-metric .lb{color:#777;font-size:9px;text-transform:uppercase;letter-spacing:.3px}
+.qp-metric .v.green{color:#067d62}
+.qp-metric .v.red{color:#b12704}
+.qp-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;background:#fef3c7;color:#78350f;border:1px solid #fde68a;margin-left:4px}
+
 /* Responsive */
 @media(max-width:768px){
   .filters{top:44px;padding:8px 10px}
@@ -124,6 +148,8 @@ body{font-family:"Times New Roman",Times,"PingFang SC","Microsoft YaHei",serif;b
     <button onclick="setView('grid')" id="viewGrid">Grid</button>
   </div>
 </div>
+
+<div id="quickpick-wrap"></div>
 
 <div id="app">
   <div class="loading">⏳ Loading data...</div>
@@ -253,6 +279,78 @@ function toggleDetail(idx) {
   applyFilters();
 }
 
+let _qpCountry = 'ALL';
+let _qpData = null;
+
+function qpRenderHeader() {
+  if (!_qpData || !_qpData.items) return '';
+  const countries = ['ALL', ...new Set(_qpData.items.map(it => it.country))];
+  return countries.map(c => {
+    const cnt = c === 'ALL' ? _qpData.items.length : _qpData.items.filter(it => it.country === c).length;
+    return '<span class="qp-tab' + (c === _qpCountry ? ' active' : '') + '" onclick="qpSwitch(\'' + c + '\')">' + c + ' · ' + cnt + '</span>';
+  }).join('');
+}
+
+function qpSwitch(c) {
+  _qpCountry = c;
+  renderQuickPick();
+}
+
+function qpRowHTML(it, idx) {
+  const m = it.metrics || {};
+  const monthBuy = m['月购_calc'] || 0;
+  const monthSearch = m['月搜'] || 0;
+  const needSupply = m['需供比'] || 0;
+  const cat = (it.category_top || '').replace(/&/g, '&amp;');
+  const kwEsc = (it.keyword || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const tags = (it.tags || []).map(t => '<span class="qp-tag">' + t + '</span>').join('');
+  const domain = it.country === 'UK' ? 'amazon.co.uk' : it.country === 'DE' ? 'amazon.de' : it.country === 'CA' ? 'amazon.ca' : 'amazon.com';
+  return '<div class="qp-row">' +
+    '<div class="qp-rank">' + (idx + 1) + '</div>' +
+    '<div class="qp-kw">' + kwEsc +
+      ' <a href="https://' + domain + '/s?k=' + encodeURIComponent(it.keyword || '') + '" target="_blank">🔍</a>' +
+      (cat ? '<div class="qp-cat">' + cat + '</div>' : '') +
+      tags +
+    '</div>' +
+    '<div class="qp-metric"><div class="v">' + monthBuy.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div><div class="lb">月购</div></div>' +
+    '<div class="qp-metric"><div class="v">' + monthSearch.toLocaleString() + '</div><div class="lb">月搜</div></div>' +
+    '<div class="qp-metric"><div class="v ' + (needSupply >= 20 ? 'green' : needSupply < 5 ? 'red' : '') + '">' + needSupply.toFixed(1) + '</div><div class="lb">需供比</div></div>' +
+  '</div>';
+}
+
+function renderQuickPick() {
+  const wrap = document.getElementById('quickpick-wrap');
+  if (!wrap) return;
+  if (!_qpData || !_qpData.items || _qpData.items.length === 0) {
+    wrap.innerHTML = '';
+    return;
+  }
+  const items = _qpCountry === 'ALL' ? _qpData.items : _qpData.items.filter(it => it.country === _qpCountry);
+  const sorted = [...items].sort((a, b) => (b.metrics && b.metrics['月购_calc'] || 0) - (a.metrics && a.metrics['月购_calc'] || 0));
+  const top = sorted.slice(0, 20);
+  const ts = (_qpData.generated_at || '').replace('T', ' ').substring(0, 16);
+  wrap.innerHTML =
+    '<div class="qp-section">' +
+      '<div class="qp-header">' +
+        '<span>⚡ Quick-Pick Pool — 硬筛后的高优候选</span>' +
+        '<span class="qp-count">' + _qpData.items.length + ' items · ' + ts + '</span>' +
+      '</div>' +
+      '<div class="qp-tabs">' + qpRenderHeader() + '</div>' +
+      '<div class="qp-list">' + top.map(qpRowHTML).join('') + '</div>' +
+    '</div>';
+}
+
+async function loadQuickPick() {
+  try {
+    const r = await fetch('data/quick-pick.json?_=' + Date.now());
+    if (!r.ok) return;
+    _qpData = await r.json();
+    renderQuickPick();
+  } catch (e) {
+    console.warn('quick-pick load failed', e);
+  }
+}
+
 function applyFilters() {
   const strategy = document.getElementById('strategyFilter').value;
   const sortBy = document.getElementById('sortFilter').value;
@@ -353,6 +451,7 @@ async function load() {
   }
 }
 load();
+loadQuickPick();
 </script>
 </body>
 </html>

@@ -1,0 +1,45 @@
+{
+  "_comment": "快速筛选阈值与黑名单配置（独立文件，方便几十万万词入筛时只改这里）",
+  "version": "2026-07-23.1",
+  "hard": {
+    "评分数_max": 800,
+    "广告竞品数_max": 50,
+    "价格_min": 15,
+    "价格_max": 70,
+    "SPR_max": 200,
+    "需供比_min": 3,
+    "月购_min": 100
+  },
+  "soft": {
+    "_comment": "软筛默认启用；按国家覆盖（CA 不跑软筛）",
+    "点击集中度_max": 0.55,
+    "转化集中度_max": 0.35,
+    "country_overrides": {
+      "UK": {"点击集中度_max": 0.65, "转化集中度_max": 0.45},
+      "DE": {"点击集中度_max": 0.65, "转化集中度_max": 0.45},
+      "CA": {"_disabled": true}
+    }
+  },
+  "blacklist": {
+    "_comment": "子串匹配（关键词小写后任一黑名单子串命中即砍）",
+    "enabled": true,
+    "keywords": [
+      "sex", "sexual", "adult toy", "lingerie", "vibrat", "dild", "porn", "erotic",
+      "masturbat", "bdsm", "fetis", "bondage", "anal", "cock", "penis", "vagin",
+      "underwear women sexy", "bra sexy", "thong sexy",
+      "food", "snack", "candy", "supplement", "vitamin", "protein", "collagen", "probiotic",
+      "perfume", "essential oil", "blade", "weapon", "gun", "knife set", "medicine", "medical",
+      "drug", "pill", "capsule", "tablet", "inhaler", "vape", "cigarette", "alcohol",
+      "infant formula", "baby formula",
+      "glass", "mirror", "ceramic", "crystal", "porcelain",
+      "furniture", "mattress", "sofa", "wardrobe", "bookshelf", "shelving", "desk",
+      "syringe", "needle", "insulin", "tretinoin", "desmoxan", "bleaching",
+      "nebulizer", "methylene blue", "hookah", "cigar"
+    ]
+  },
+  "output": {
+    "dedup_within_country": true,
+    "min_keystrokes": 3,
+    "_comment": "min_keystrokes 过滤残词（shee/kni/lega/powd 这种）"
+  }
+}

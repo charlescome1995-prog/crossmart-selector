@@ -1,14 +1,21 @@
-# Python
+# --- inputs (raw data from 卖家精灵/ABA, 几十 MB, 不入库) ---
+backend/data/input/
+backend/data/output/
+
+# --- processed 缓存（每次跑重新生成）---
+backend/processed/_archive/
+backend/processed/cache/
+backend/cache/
+
+# --- 一次性脚本 / 日志 ---
+backend/_tmp.txt
+backend/data/input/_probe_*.py
+backend/data/input/_tmp.txt
+_tmp.txt
+
+# --- 编辑器 / 系统 ---
+.DS_Store
+.idea/
+.vscode/
 __pycache__/
 *.pyc
-*.pyo
-
-# 输入数据（每周 Excel，体积大，不入库）
-backend/data/input/*.xlsx
-backend/data/input/~$*.xlsx
-backend/data/output/*.xlsx
-
-# 临时/调试
-_inspect.py
-*.log
-.DS_Store
