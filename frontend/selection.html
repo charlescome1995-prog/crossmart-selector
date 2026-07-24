@@ -6,12 +6,12 @@
 <title>CrossMart Selector</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:"Times New Roman",Times,"PingFang SC","Microsoft YaHei",serif}
-body{background:#f4f7f6;color:#333;padding:0;font-size:13px}
+body{background:#f4f7f6;color:#333;padding:0;font-size:15px}
 
 /* ===== Topbar (borrowed from monitor.html) ===== */
 .topbar{background:linear-gradient(135deg,#131921 0%,#232f3e 100%);color:white;display:flex;align-items:center;gap:14px;padding:10px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-.topbar .logo{font-weight:700;font-size:15px;letter-spacing:.5px}
-.topbar a{color:#ccc;text-decoration:none;padding:5px 12px;border-radius:6px;font-size:13px;transition:all .2s}
+.topbar .logo{font-weight:700;font-size:17px;letter-spacing:.5px}
+.topbar a{color:#ccc;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:15px;transition:all .2s}
 .topbar a:hover{background:rgba(255,255,255,.1);color:#fff}
 .topbar a.active{background:#e94560;color:white}
 
@@ -21,49 +21,56 @@ body{background:#f4f7f6;color:#333;padding:0;font-size:13px}
 /* ===== Header card (config-matrix style) ===== */
 .header-card{background:#fff;padding:14px;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid #e2e8f0}
 .action-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed #e2e8f0;flex-wrap:wrap;gap:10px}
-.title-tag{font-size:12px;font-weight:700;color:#1e293b;background:#f1f5f9;padding:4px 10px;border-radius:4px;border:1px solid #cbd5e1}
-.title-hint{font-size:11px;color:#94a3b8}
+.title-tag{font-size:14px;font-weight:700;color:#1e293b;background:#f1f5f9;padding:5px 12px;border-radius:4px;border:1px solid #cbd5e1}
+.title-hint{font-size:13px;color:#94a3b8}
 .ctrl-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.ctrl-group .stat{font-size:12px;padding:4px 10px;border-radius:20px;background:#e2e8f0;color:#64748b;white-space:nowrap}
+.ctrl-group .stat{font-size:14px;padding:5px 12px;border-radius:20px;background:#e2e8f0;color:#64748b;white-space:nowrap}
 .ctrl-group .stat strong{color:#1e293b;font-weight:700}
 
-/* ===== Bucket tabs (sticky) ===== */
-.tabs-strip{background:#fff;padding:8px 14px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;position:sticky;top:48px;z-index:99;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.tabs-strip .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-right:6px}
-.tab{padding:5px 12px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;transition:.15s}
+/* ===== Tabs strip: Bucket + Country on ONE ROW ===== */
+.tabs-strip{background:#fff;padding:8px 14px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:12px;display:flex;flex-wrap:nowrap;align-items:center;position:sticky;top:48px;z-index:99;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow-x:auto;gap:4px}
+.tabs-strip .lbl{font-size:13px;color:#94a3b8;font-weight:700;margin-right:6px;flex-shrink:0}
+.tabs-strip .sep{width:1px;height:22px;background:#e2e8f0;margin:0 8px;flex-shrink:0}
+.tabs-strip .right{margin-left:auto;display:flex;gap:6px;align-items:center;flex-shrink:0}
+.tab{padding:6px 13px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;transition:.15s;white-space:nowrap}
 .tab:hover{background:#e2e8f0}
 .tab.active{background:#e94560;color:#fff;border-color:#e94560}
-.tab-count{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,.08);font-size:10px}
+.tab-count{display:inline-block;margin-left:5px;padding:1px 7px;border-radius:10px;background:rgba(0,0,0,.08);font-size:12px}
 .tab.active .tab-count{background:rgba(255,255,255,.25)}
+.tab[data-country='ALL'].active{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
+.tab[data-country='UK'].active{background:#16a34a;color:#fff;border-color:#16a34a}
+.tab[data-country='DE'].active{background:#ca8a04;color:#fff;border-color:#ca8a04}
+.tab[data-country='CA'].active{background:#dc2626;color:#fff;border-color:#dc2626}
+.tab[data-country='US'].active{background:#7c3aed;color:#fff;border-color:#7c3aed}
 
-/* ===== Search bar (filter-bar style) ===== */
+/* ===== Search bar ===== */
 .filter-bar{background:#fff;padding:12px;border-radius:6px 6px 0 0;border:1px solid #e2e8f0;border-bottom:none;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:0}
 .filter-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.filter-controls input{padding:6px 12px;border:1px solid #cbd5e1;border-radius:4px;width:280px;font-size:13px}
+.filter-controls input{padding:8px 14px;border:1px solid #cbd5e1;border-radius:4px;width:280px;font-size:15px}
 
 /* ===== Action template ===== */
-.action-template{background:#fffbf0;border:1px solid #ffe082;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:12px;display:none}
+.action-template{background:#fffbf0;border:1px solid #ffe082;border-radius:6px;padding:14px 18px;margin-bottom:12px;font-size:14px;display:none}
 .action-template.show{display:block}
-.action-template .pri{font-weight:700;color:#92400e;margin-bottom:6px;font-size:13px}
-.action-template ul{margin:4px 0;padding-left:20px}
-.action-template li{margin:2px 0}
-.action-template .meta-line{margin-top:4px;color:#666;font-size:11px}
+.action-template .pri{font-weight:700;color:#92400e;margin-bottom:8px;font-size:16px}
+.action-template ul{margin:6px 0;padding-left:22px}
+.action-template li{margin:3px 0}
+.action-template .meta-line{margin-top:6px;color:#666;font-size:13px}
 
-/* ===== Tables (table-container / monitor-table style) ===== */
+/* ===== Tables ===== */
 .table-container{background:#fff;border-radius:0 0 6px 6px;border:1px solid #e2e8f0;border-top:none;overflow-x:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);max-width:100%;margin-bottom:16px}
 table.data{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;text-align:left;overflow:hidden}
-table.data th{background:#f8fafc;padding:10px 8px;font-size:11px;font-weight:700;color:#334155;border-bottom:2px solid #e2e8f0;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;user-select:none}
+table.data th{background:#f8fafc;padding:12px 8px;font-size:13px;font-weight:700;color:#334155;border-bottom:2px solid #e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;user-select:none}
 table.data th:hover{background:#f1f5f9}
-table.data th::after{content:' ⇅';opacity:.3;font-size:9px}
+table.data th::after{content:' ⇅';opacity:.3;font-size:10px}
 table.data th.sort-asc::after{content:' ▲';opacity:1;color:#e94560}
 table.data th.sort-desc::after{content:' ▼';opacity:1;color:#e94560}
-table.data td{padding:8px 6px;border-bottom:1px solid #f0f0f0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-table.data td.kw{font-weight:600;color:#007185;font-family:ui-monospace,"Cascadia Code","Consolas",monospace;font-size:11px}
+table.data td{padding:10px 8px;border-bottom:1px solid #f0f0f0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.data td.kw{font-weight:600;color:#007185;font-family:ui-monospace,"Cascadia Code","Consolas",monospace;font-size:13px}
 table.data td.kw a{color:#007185;text-decoration:none}
 table.data td.kw a:hover{color:#c45500;text-decoration:underline}
-table.data td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.data td.num{text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
 table.data tr:hover{background:#f8fbff}
-table.data td.empty{text-align:center;color:#94a3b8;padding:32px;font-size:13px}
+table.data td.empty{text-align:center;color:#94a3b8;padding:40px;font-size:14px}
 
 /* column widths (must total 100%) */
 .col-country{width:4%}
@@ -79,20 +86,19 @@ table.data td.empty{text-align:center;color:#94a3b8;padding:32px;font-size:13px}
 .col-legacy{width:18%}
 
 /* ===== Tags ===== */
-.tag-tier{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600}
+.tag-tier{display:inline-block;padding:2px 8px;border-radius:10px;font-size:13px;font-weight:600}
 .tag-tier.green{background:#d1fae5;color:#065f46}
 .tag-tier.yellow{background:#fef3c7;color:#92400e}
 .tag-tier.red{background:#fee2e2;color:#991b1b}
 
-.tag-legacy{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe}
+.tag-legacy{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe}
 .tag-legacy.strong{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd;font-weight:600}
 .tag-legacy.medium{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}
 .tag-legacy.none{background:#f3f4f6;color:#9ca3af;border-color:#e5e7eb}
 
 /* ===== Footer ===== */
-footer{padding:16px 20px;color:#94a3b8;font-size:11px;text-align:center;border-top:1px solid #e2e8f0;background:#fafafa;margin-top:16px}
-footer code{font-family:ui-monospace,monospace;font-size:10px;background:#f0f0f0;padding:1px 5px;border-radius:3px}
-
+footer{padding:18px 20px;color:#94a3b8;font-size:13px;text-align:center;border-top:1px solid #e2e8f0;background:#fafafa;margin-top:16px}
+footer code{font-family:ui-monospace,monospace;font-size:12px;background:#f0f0f0;padding:1px 5px;border-radius:3px}
 </style>
 </head>
 <body>
@@ -108,33 +114,38 @@ footer code{font-family:ui-monospace,monospace;font-size:10px;background:#f0f0f0
 
 <div class="container">
 
-  <!-- HEADER CARD (config-matrix style from monitor.html) -->
+  <!-- HEADER CARD -->
   <div class="header-card">
     <div class="action-row">
       <div style="display:flex;align-items:center;gap:12px;">
-        <div class="title-tag">Product Selector (4-Bucket SOP)</div>
-        <div class="title-hint">Left 5 cols = Product Metrics | Right 1 col = Legacy Match</div>
+        <div class="title-tag">选品（4 桶 SOP）</div>
+        <div class="title-hint">前 9 列 = 选品指标 · 最后 1 列 = 前置老品关联</div>
       </div>
       <div class="ctrl-group">
-        <span class="stat"><strong id="totalCount">0</strong> in-bucket</span>
-        <span class="stat">Updated: <strong id="generatedAt">—</strong></span>
-        <span class="stat">Legacy: <strong id="legacyCount">0</strong></span>
+        <span class="stat"><strong id="totalCount">0</strong> 入桶</span>
+        <span class="stat">更新: <strong id="generatedAt">—</strong></span>
+        <span class="stat">老品库: <strong id="legacyCount">0</strong></span>
       </div>
     </div>
   </div>
 
-  <!-- BUCKET TABS -->
+  <!-- BUCKET + COUNTRY TABS (one row, country pushed right via margin-left:auto) -->
   <div class="tabs-strip">
-    <span class="lbl">Bucket:</span>
-    <div id="tabs"></div>
+    <span class="lbl">桶:</span>
+    <div id="bucketTabs" style="display:flex;gap:4px;align-items:center;"></div>
+    <div class="sep"></div>
+    <div class="right">
+      <span class="lbl">🌍</span>
+      <div id="countryTabs" style="display:flex;gap:4px;align-items:center;"></div>
+    </div>
   </div>
 
-  <!-- FILTER BAR (search) -->
+  <!-- FILTER BAR -->
   <div class="filter-bar">
     <div class="filter-controls">
-      <input id="searchInput" type="text" placeholder="Search keyword or country (e.g. butter / DE)...">
+      <input id="searchInput" type="text" placeholder="搜索关键词或国家（如 butter / DE）">
     </div>
-    <span class="title-hint">Click column headers to sort · Click tabs to switch bucket</span>
+    <span class="title-hint">点击表头排序 · 点击 Tab 切换桶/国家</span>
   </div>
 
   <!-- PANELS (4 buckets) -->
@@ -151,6 +162,7 @@ footer code{font-family:ui-monospace,monospace;font-size:10px;background:#f0f0f0
 
 <script>
 const BUCKET_ORDER = ["Brand Innovation", "New Release", "Follow Crowd", "Legacy Extension"];
+const COUNTRIES = ["ALL", "UK", "DE", "CA", "US"];
 const BUCKET_META = {
   "Brand Innovation":  {tier: "🟢", rule: "Reviews <200 AND Ad Competitors <15"},
   "New Release":       {tier: "🟡", rule: "Reviews 200-800 AND Ad Competitors <15"},
@@ -161,51 +173,52 @@ const BUCKET_ACTION = {
   "Brand Innovation": {
     priority: "Test-First",
     actions: [
-      "Low-budget multi-ASIN spread · pick the winner in 30 days",
-      "Listing copy = category education (user awareness low)",
-      "PPC on category root words + long-tail variants",
-      "3-5 ASIN A/B test, 30 days to verdict"
+      "低预算多 ASIN 铺货 · 30 天内挑选赢家",
+      "Listing 文案 = 类目教育（用户认知低）",
+      "PPC 投类目根词 + 长尾变体",
+      "3-5 个 ASIN 同步 A/B，30 天见分晓"
     ],
-    risk: "Low CTR expected, do not chase ROI early",
-    roi: "6-12 months ramp · long profit curve"
+    risk: "初期 CTR 低，不要过早追 ROI",
+    roi: "6-12 个月爬坡 · 长线利润曲线"
   },
   "New Release": {
     priority: "Position-First",
     actions: [
-      "Differentiated main image + video + early review rush",
-      "PPC on long-tail + competitor ASINs",
-      "Push BSR in first 30 days (BD/LD if needed)",
-      "Title / 5 bullets carry core long-tail keywords"
+      "差异化主图 + 视频 + 早期 review 冲刺",
+      "PPC 抢长尾 + 竞品 ASIN",
+      "前 30 天冲 BSR 排名（BD/LD 必要时）",
+      "Title / 5 bullets 重点带核心长尾词"
     ],
-    risk: "Others just started · you have differentiation window",
-    roi: "3-6 months payback · medium profit curve"
+    risk: "大家刚开卖，你还有差异化窗口",
+    roi: "3-6 个月回本 · 中等利润曲线"
   },
   "Follow Crowd": {
     priority: "Optimize-First",
     actions: [
-      "Average profit · Listing quality war (title / A+ / video / pkg)",
-      "PPC on conversion (precise keywords + high bid)",
-      "FBA must be A+ · avoid being outpaced by competitors",
-      "Prepare for price war (margin <25% = stay out)"
+      "平均利润 · Listing 质量战（title / A+ / 视频 / 包装）",
+      "PPC 投转化（精准词 + 高出价）",
+      "FBA 必须 A+ · 不能被竞品在视觉上甩开",
+      "备好价格战预案（毛利 <25% = 退出）"
     ],
-    risk: "Demand proven · competition fierce · differentiation hard",
-    roi: "2-4 months payback · short but stable"
+    risk: "需求已被验证 · 竞争激烈 · 难以差异化",
+    roi: "2-4 个月回本 · 短平稳利润曲线"
   },
   "Legacy Extension": {
     priority: "Bundle-First",
     actions: [
-      "Harvest top traffic · variant extension (color / size / pack)",
-      "PPC on association slots (competitor ASINs + category nodes)",
-      "Packaging differentiation (bundle sets + gift packs)",
-      "Find sub-scenes not covered by top sellers"
+      "抢头部流量 · 变体延伸（颜色 / 尺寸 / 套装）",
+      "PPC 投关联位（竞品 ASIN + 类目节点）",
+      "包装差异化（套装组合 + 礼品装）",
+      "挖掘头部没覆盖的细分场景"
     ],
-    risk: "Top sellers testing variants · you ride the wave via differentiation",
-    roi: "2-3 months payback · short curve"
+    risk: "头部在测变体 · 你借势差异化打配套",
+    roi: "2-3 个月回本 · 短线利润曲线"
   },
 };
 
 let _strategy = null;
 let _activeBucket = "New Release";
+let _activeCountry = "ALL";
 
 function fmtNum(n) {
   if (n === null || n === undefined || n === '' || isNaN(n)) return '-';
@@ -233,42 +246,38 @@ function tierTag(tier) {
   return `<span class="tag-tier ${cls}">${tier}</span>`;
 }
 
-// reverse-lookup: backend name → display name
-function displayName(b) { return BUCKET_ORDER.includes(b) ? b : b; }
+// display-name ↔ backend-key map (must match strategy.json output keys)
+const BUCKET_KEY_MAP = {"Brand Innovation":"品牌创新", "New Release":"newrelease", "Follow Crowd":"模仿跟风", "Legacy Extension":"老款延伸"};
 
-// map backend bucket name to display bucket name (we keep same names, just for clarity)
-function bucketOf(item) {
-  // backend uses Chinese keys; we keep display names in English
-  return _strategy._bucketMap && _strategy._bucketMap[item._backendBucket] || item._backendBucket || '';
+function findBucket(displayName) {
+  const backendKey = BUCKET_KEY_MAP[displayName];
+  return _strategy && _strategy.buckets && _strategy.buckets[backendKey];
 }
 
 function renderTabs() {
-  const wrap = document.getElementById('tabs');
-  wrap.innerHTML = BUCKET_ORDER.map(name => {
+  const bw = document.getElementById('bucketTabs');
+  bw.innerHTML = BUCKET_ORDER.map(name => {
     const b = findBucket(name);
     const cnt = b ? b.count : 0;
     const active = name === _activeBucket ? ' active' : '';
     return `<div class="tab${active}" data-bucket="${name}" onclick="switchBucket('${name}')">${BUCKET_META[name].tier} ${name}<span class="tab-count">${cnt}</span></div>`;
   }).join('');
-}
 
-function findBucket(displayName) {
-  // displayName ↔ backend key
-  const map = {"Brand Innovation":"品牌创新", "New Release":"newrelease", "Follow Crowd":"模仿跟风", "Legacy Extension":"老款延伸"};
-  const backendKey = map[displayName];
-  return _strategy.buckets[backendKey];
+  const cw = document.getElementById('countryTabs');
+  cw.innerHTML = COUNTRIES.map(c => {
+    const active = c === _activeCountry ? ' active' : '';
+    return `<div class="tab${active}" data-country="${c}" onclick="switchCountry('${c}')">${c}</div>`;
+  }).join('');
 }
 
 function renderActionTemplate(name) {
-  const b = findBucket(name);
-  if (!b || !b.items || !b.items.length) return '';
   const t = BUCKET_ACTION[name];
   const actions = t.actions.map(a => `<li>${a}</li>`).join('');
   return `<div class="action-template show" data-bucket="${name}">
     <div class="pri">📌 ${name} · ${t.priority}</div>
     <ul>${actions}</ul>
     <div class="meta-line">⚠️ ${t.risk}</div>
-    <div class="meta-line">📈 Expected ROI: ${t.roi}</div>
+    <div class="meta-line">📈 预期 ROI: ${t.roi}</div>
   </div>`;
 }
 
@@ -276,7 +285,7 @@ function renderTable(name) {
   const b = findBucket(name);
   const items = b ? b.items : [];
   if (!items.length) {
-    return `<div class="table-container"><table class="data"><tbody><tr><td class="empty">(no candidates in this bucket)</td></tr></tbody></table></div>`;
+    return `<div class="table-container"><table class="data"><tbody><tr><td class="empty">(该桶暂无候选)</td></tr></tbody></table></div>`;
   }
   const rows = items.map(it => {
     const m = it.metrics || {};
@@ -285,9 +294,9 @@ function renderTable(name) {
     const kw = escapeHtml(it.keyword);
     const c = it.country || '';
     const domain = domainFor(c);
-    return `<tr data-kw="${kw.toLowerCase()}" data-country="${c.toLowerCase()}">
+    return `<tr data-kw="${kw.toLowerCase()}" data-country="${c.toUpperCase()}">
       <td class="col-country">${c}</td>
-      <td class="col-kw kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank">${kw}</a> 🔍</td>
+      <td class="col-kw kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank">${kw}</a></td>
       <td class="col-tier">${tier}</td>
       <td class="col-yg num">${fmtNum(m['月购_calc'])}</td>
       <td class="col-xgb num">${fmtNum(m['需供比'])}</td>
@@ -307,17 +316,17 @@ function renderTable(name) {
         <col class="col-ad"><col class="col-price"><col class="col-score"><col class="col-legacy">
       </colgroup>
       <thead><tr>
-        <th data-col="country" data-type="str">Country</th>
-        <th data-col="keyword" data-type="str">Keyword</th>
-        <th data-col="tier" data-type="str">Tier</th>
-        <th data-col="yg" data-type="num">Buy/mo</th>
-        <th data-col="xgb" data-type="num">D/S</th>
-        <th data-col="pfs" data-type="num">Reviews</th>
+        <th data-col="country" data-type="str">国</th>
+        <th data-col="keyword" data-type="str">关键词</th>
+        <th data-col="tier" data-type="str">档</th>
+        <th data-col="yg" data-type="num">月购</th>
+        <th data-col="xgb" data-type="num">供需比</th>
+        <th data-col="pfs" data-type="num">评价数</th>
         <th data-col="spr" data-type="num">SPR</th>
-        <th data-col="ad" data-type="num">Ad Comp</th>
-        <th data-col="price" data-type="num">Price</th>
-        <th data-col="score" data-type="num">Score</th>
-        <th data-col="legacy" data-type="str">Legacy Match</th>
+        <th data-col="ad" data-type="num">广告竞品</th>
+        <th data-col="price" data-type="num">价(USD)</th>
+        <th data-col="score" data-type="num">分数</th>
+        <th data-col="legacy" data-type="str">前置老品</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -327,8 +336,7 @@ function renderTable(name) {
 function renderPanels() {
   const wrap = document.getElementById('panels');
   wrap.innerHTML = BUCKET_ORDER.map(name => {
-    const show = name === _activeBucket ? ' show' : '';
-    return `<div class="bucket-panel${show}" data-bucket="${name}">
+    return `<div class="bucket-panel" data-bucket="${name}" style="display:${name === _activeBucket ? '' : 'none'}">
       ${renderActionTemplate(name)}
       ${renderTable(name)}
     </div>`;
@@ -337,16 +345,16 @@ function renderPanels() {
 
 function switchBucket(name) {
   _activeBucket = name;
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.bucket === name));
+  document.querySelectorAll('.tab[data-bucket]').forEach(t => t.classList.toggle('active', t.dataset.bucket === name));
   document.querySelectorAll('.bucket-panel').forEach(p => {
-    p.classList.toggle('show', p.dataset.bucket === name);
     p.style.display = p.dataset.bucket === name ? '' : 'none';
   });
-  document.querySelectorAll('.action-template').forEach(a => {
-    const match = a.dataset.bucket === name;
-    a.classList.toggle('show', match);
-    a.style.display = match ? '' : 'none';
-  });
+  applySearch();
+}
+
+function switchCountry(c) {
+  _activeCountry = c;
+  document.querySelectorAll('.tab[data-country]').forEach(t => t.classList.toggle('active', t.dataset.country === c));
   applySearch();
 }
 
@@ -355,10 +363,12 @@ function applySearch() {
   const visiblePanel = document.querySelector(`.bucket-panel[data-bucket="${_activeBucket}"]`);
   if (!visiblePanel) return;
   visiblePanel.querySelectorAll('tbody tr').forEach(tr => {
-    if (!q) { tr.style.display = ''; return; }
     const kw = tr.dataset.kw || '';
-    const c = tr.dataset.country || '';
-    tr.style.display = (kw.includes(q) || c.includes(q)) ? '' : 'none';
+    const c = (tr.dataset.country || '').toUpperCase();
+    const countryOk = _activeCountry === 'ALL' || c === _activeCountry;
+    if (!countryOk) { tr.style.display = 'none'; return; }
+    if (!q) { tr.style.display = ''; return; }
+    tr.style.display = (kw.includes(q) || c.toLowerCase().includes(q)) ? '' : 'none';
   });
 }
 
@@ -404,7 +414,7 @@ async function load() {
     applySearch();
   } catch(e) {
     document.getElementById('panels').innerHTML =
-      '<div style="padding:40px;text-align:center;color:#94a3b8">⚠️ Load failed: ' + e.message + '<br><br>Please ensure <code>data/strategy.json</code> exists</div>';
+      '<div style="padding:40px;text-align:center;color:#94a3b8">⚠️ 加载失败：' + e.message + '<br><br>请确认 <code>data/strategy.json</code> 存在</div>';
   }
 }
 
