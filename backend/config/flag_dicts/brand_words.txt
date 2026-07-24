@@ -1,0 +1,26 @@
+# brand_words.txt — 已知品牌词黑名单（小写子串匹配）
+# 命中即归 🔴 砍档（亚马逊品牌词进 ABA = 用户在找特定品牌，无法切入）
+# 数据来源：本次 quick-pick 48 条 + 历史 ABA 漏网案例
+# 维护规则：每条加一行，附发现日期 + 国家（# 注释）
+
+# === UK 医药/护理品牌（7/24 ABA 漏网） ===
+gaviscon
+atrixo
+# === UK/US 小家电品牌（7/24 漏网） ===
+braun
+ninja blender
+nespresso
+# === US 保健品牌（7/24 漏网） ===
+toplux
+sweed
+omni
+healora
+# === US 美护品牌（7/24 漏网） ===
+treluxe  # 卷发护理品牌
+# === CA 宠物品牌（7/24 漏网） ===
+pretty litter
+# === UK 婴儿用品品牌（7/24 漏网） ===
+snuzpod
+# === 历史漏网（按需补充） ===
+stopwatt
+bottle warmer

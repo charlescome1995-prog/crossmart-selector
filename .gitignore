@@ -1,12 +1,22 @@
 # --- inputs (raw data from 卖家精灵/ABA, 几十 MB, 不入库) ---
 backend/data/input/
 backend/data/output/
+backend/data/browser_profiles/
+backend/data/cache/
+backend/data/processed/
+backend/data/raw/
 
 # --- processed 缓存（每次跑重新生成）---
 backend/processed/_archive/
 backend/processed/cache/
-backend/processed/quick_filter/*.json
+backend/processed/quick_filter/
+backend/processed/triage/
+backend/processed/strategy/
 backend/cache/
+
+# --- 前端本地归档 / 临时看板 ---
+frontend/data/_archive/
+frontend/data/strategy.html
 
 # --- 一次性脚本 / 日志 ---
 backend/_tmp.txt

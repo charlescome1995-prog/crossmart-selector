@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CrossMart - Product Selector</title>
+<title>CrossMart - Product Selector (4-Bucket SOP)</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"Times New Roman",Times,"PingFang SC","Microsoft YaHei",serif;background:#eaeded;color:#0f1111;font-size:14px;min-height:100vh}
@@ -15,443 +15,304 @@ body{font-family:"Times New Roman",Times,"PingFang SC","Microsoft YaHei",serif;b
 .topbar a:hover{background:rgba(255,255,255,.1);color:#fff}
 .topbar a.active{background:#e94560;color:white}
 
-/* Filters bar */
-.filters{background:white;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #d5d9d9;position:sticky;top:48px;z-index:99}
-.filters select,.filters input{padding:6px 10px;border:1px solid #d5d9d9;border-radius:6px;font-size:13px;background:white}
-.filters input{width:160px}
-.filters .badge{background:#e94560;color:white;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
-.filters .stat{color:#555;font-size:12px}
-.filters .stat strong{color:#0f1111}
+/* Meta strip */
+.meta-strip{background:white;padding:8px 20px;border-bottom:1px solid #d5d9d9;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#555}
+.meta-strip .stat strong{color:#0f1111}
+.meta-strip .ts{color:#888}
 
-/* Card */
-.card{background:white;border:1px solid #d5d9d9;border-radius:10px;overflow:hidden;margin:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.card-header{background:#fafafa;padding:10px 16px;font-weight:600;border-bottom:1px solid #e6e8ea;display:flex;justify-content:space-between;align-items:center;font-size:13px}
-
-/* Product row */
-.prod-row{padding:12px 16px;border-bottom:1px solid #f0f2f2;display:grid;grid-template-columns:44px auto 1fr auto auto;gap:14px;align-items:center;transition:background .15s;cursor:pointer}
-.prod-row:hover{background:#f7fafc}
-.prod-row.active{background:#effaff;border-left:3px solid #007185}
-.prod-row:last-child{border-bottom:none}
-.rank{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
-.rank-1{background:linear-gradient(135deg,#ffd700,#f5c518);color:#000;box-shadow:0 2px 6px rgba(255,215,0,.4)}
-.rank-2{background:linear-gradient(135deg,#c0c0c0,#b0b0b0);color:#000;box-shadow:0 2px 6px rgba(192,192,192,.3)}
-.rank-3{background:linear-gradient(135deg,#cd7f32,#b8860b);color:white;box-shadow:0 2px 6px rgba(205,127,50,.3)}
-.rank-default{background:#e6e8ea;color:#555}
-.info .kw{font-weight:600;font-size:13px;color:#007185;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.info .kw a{color:#007185;text-decoration:none}
-.info .kw a:hover{color:#c45500;text-decoration:underline}
-.info .title{font-size:12px;color:#555;line-height:1.4;margin:3px 0;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.info .meta{font-size:11px;color:#999;margin-top:2px}
-.price{color:#B12704;font-weight:700;font-size:15px;text-align:right;min-width:60px}
-.score-pill{display:inline-flex;align-items:center;gap:4px;background:#067d62;color:white;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
-.score-pill.high{background:#067d62}
-.score-pill.mid{background:#c89411}
-.score-pill.low{background:#b12704}
-.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;background:#f0f8ff;color:#067d62;border:1px solid #ceead6;margin:1px}
-.tag.red{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
-.tag.gold{background:#fffbeb;color:#92400e;border-color:#fde68a}
-
-/* Summary bar */
-.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;padding:14px 16px;background:linear-gradient(135deg,#fafafa,#f0f2f2)}
-.summary .num{font-size:20px;font-weight:700;color:#0f1111}
+/* Bucket summary cards */
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 20px;background:linear-gradient(135deg,#fafafa,#f0f2f2);border-bottom:1px solid #e6e8ea}
+.summary .card-stat{text-align:center;padding:8px 12px;background:white;border-radius:8px;border-left:4px solid #ddd;cursor:pointer;transition:transform .15s}
+.summary .card-stat:hover{transform:translateY(-2px);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.summary .card-stat[data-bucket="品牌创新"]{border-left-color:#2ecc71}
+.summary .card-stat[data-bucket="newrelease"]{border-left-color:#f1c40f}
+.summary .card-stat[data-bucket="模仿跟风"]{border-left-color:#e67e22}
+.summary .card-stat[data-bucket="老款延伸"]{border-left-color:#9b59b6}
+.summary .num{font-size:22px;font-weight:700;color:#0f1111}
 .summary .lb{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.summary .icon{font-size:18px}
 
-/* Detail panel */
-.detail-panel{display:none;background:#fafafa;padding:16px 16px 12px;border-bottom:1px solid #e6e8ea;grid-column:1/-1}
-.detail-panel.open{display:block}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.detail-item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #eee;font-size:12px}
-.detail-item .label{color:#777}
-.detail-item .value{font-weight:600;color:#0f1111}
-.mt-2{margin-top:8px}
+/* Search */
+.search-bar{padding:10px 20px;background:white;border-bottom:1px solid #e6e8ea;display:flex;gap:10px;align-items:center}
+.search-bar input{flex:1;padding:7px 12px;border:1px solid #d5d9d9;border-radius:6px;font-size:13px}
+.search-bar .hint{font-size:11px;color:#888}
 
-/* Grid view toggle */
-.view-toggle{display:flex;gap:6px}
-.view-toggle button{padding:4px 10px;border:1px solid #d5d9d9;background:white;border-radius:6px;cursor:pointer;font-size:12px;transition:all .15s}
-.view-toggle button.active{background:#232f3e;color:white;border-color:#232f3e}
-.view-toggle button:hover:not(.active){background:#f5f5f5}
+/* Tabs */
+.tabs{display:flex;gap:4px;padding:0 20px;background:#fafafa;border-bottom:2px solid #e6e8ea;position:sticky;top:48px;z-index:99}
+.tab{padding:10px 16px;cursor:pointer;font-size:13px;color:#666;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab:hover{background:#f0f0f0}
+.tab.active{color:#2c3e50;border-bottom-color:#3498db;font-weight:600}
 
-.loading{text-align:center;padding:40px;color:#999}
+/* Action template */
+.action-template{background:#fffbf0;border:1px solid #ffe082;border-radius:6px;padding:10px 16px;margin:12px 20px;font-size:12px;display:none}
+.action-template.show{display:block}
+.action-template .pri{font-weight:600;color:#92400e;margin-bottom:6px}
+.action-template ul{margin:4px 0;padding-left:20px}
+.action-template li{margin:2px 0}
+.action-template .meta-line{margin-top:4px;color:#666;font-size:11px}
 
-/* Boost chart */
-.chart-bar{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:11px}
-.chart-bar .bar{height:6px;border-radius:3px;background:linear-gradient(90deg,#067d62,#059669);transition:width .3s}
-.chart-bar .bar.red{background:linear-gradient(90deg,#dc2626,#ef4444)}
+/* Tables */
+.bucket-panel{padding:0 20px 20px;display:none}
+.bucket-panel.show{display:block}
+table.data{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:12px;margin-top:8px}
+table.data th{background:#fafafa;padding:9px 6px;text-align:left;border-bottom:2px solid #eee;cursor:pointer;user-select:none;font-weight:600;color:#444;white-space:nowrap;font-size:11px}
+table.data th:hover{background:#f0f0f0}
+table.data th::after{content:' ⇅';opacity:.3;font-size:9px}
+table.data th.sort-asc::after{content:' ▲';opacity:1;color:#3498db}
+table.data th.sort-desc::after{content:' ▼';opacity:1;color:#3498db}
+table.data td{padding:7px 6px;border-bottom:1px solid #f0f0f0;font-size:12px}
+table.data td.kw{font-family:ui-monospace,"Cascadia Code","Consolas",monospace;font-size:11px;font-weight:600;color:#007185}
+table.data td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.data tr:hover{background:#f8fbff}
+table.data td.empty{text-align:center;color:#999;padding:24px}
 
-/* Quick-pick section */
-.qp-section{background:linear-gradient(135deg,#fff8e1,#fff3cd);border:1px solid #fbbf24;border-radius:10px;margin:12px 16px;overflow:hidden;box-shadow:0 2px 6px rgba(251,191,36,.15)}
-.qp-header{background:#fef3c7;padding:12px 16px;font-weight:600;font-size:14px;color:#78350f;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #fde68a}
-.qp-header .qp-count{background:#f59e0b;color:white;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
-.qp-tabs{display:flex;gap:4px;padding:8px 16px;background:#fef9e7;border-bottom:1px solid #fde68a;flex-wrap:wrap}
-.qp-tab{padding:4px 12px;border-radius:14px;font-size:12px;cursor:pointer;background:white;border:1px solid #fbbf24;color:#78350f;transition:all .15s;user-select:none}
-.qp-tab:hover{background:#fff3cd}
-.qp-tab.active{background:#f59e0b;color:white;border-color:#f59e0b;font-weight:600}
-.qp-list{padding:8px 16px 14px}
-.qp-row{display:grid;grid-template-columns:36px 1fr auto auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed #fde68a;font-size:12px;cursor:pointer}
-.qp-row:hover{background:#fffbeb}
-.qp-row:last-child{border-bottom:none}
-.qp-rank{font-weight:700;color:#92400e;font-size:13px;background:#fde68a;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.qp-kw{color:#007185;font-weight:600;word-break:break-word;min-width:0}
-.qp-kw a{color:#007185;text-decoration:none;margin-left:6px;font-size:11px}
-.qp-kw a:hover{color:#c45500;text-decoration:underline}
-.qp-cat{font-size:10px;color:#777;margin-top:2px;font-weight:400}
-.qp-metric{display:flex;flex-direction:column;align-items:center;min-width:54px;font-size:11px}
-.qp-metric .v{font-weight:700;color:#0f1111;font-size:13px}
-.qp-metric .lb{color:#777;font-size:9px;text-transform:uppercase;letter-spacing:.3px}
-.qp-metric .v.green{color:#067d62}
-.qp-metric .v.red{color:#b12704}
-.qp-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;background:#fef3c7;color:#78350f;border:1px solid #fde68a;margin-left:4px}
+.tag-tier{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600}
+.tag-tier.green{background:#d1fae5;color:#065f46}
+.tag-tier.yellow{background:#fef3c7;color:#92400e}
+.tag-tier.red{background:#fee2e2;color:#991b1b}
 
-/* Responsive */
-@media(max-width:768px){
-  .filters{top:44px;padding:8px 10px}
-  .filters input{width:100px}
-  .summary{grid-template-columns:repeat(3,1fr)}
-  .detail-grid{grid-template-columns:1fr}
-  .prod-row{grid-template-columns:32px auto 1fr;gap:8px}
-  .prod-row .price{display:none}
-}
+.tag-legacy{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe}
+.tag-legacy.strong{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd;font-weight:600}
+.tag-legacy.medium{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}
+.tag-legacy.none{background:#f3f4f6;color:#9ca3af;border-color:#e5e7eb}
+
+footer{padding:16px 20px;color:#888;font-size:11px;text-align:center;border-top:1px solid #e6e8ea;background:#fafafa}
+footer code{font-family:ui-monospace,monospace;font-size:10px;background:#f0f0f0;padding:1px 5px;border-radius:3px}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <span class="logo">🎯 CrossMart Selector</span>
-  <a href="selection.html" class="active">🎯 CrossMart Selector</a>
-  <a href="https://charlescome1995-prog.github.io/crossmart-listing/listing.html" target="_top">📝 CrossMart Listing</a>
-  <a href="https://charlescome1995-prog.github.io/crossmart-monitor/monitor.html" target="_top">📊 CrossMart Monitor</a>
-  <a href="https://charlescome1995-prog.github.io/crossmart-ops/ops.html" target="_top">📈 CrossMart Ops</a>
-  <a href="https://charlescome1995-prog.github.io/crossmart-simulator/simulator.html" target="_top">🔮 CrossMart Simulator</a>
+  <a href="selection.html" class="active">🎯 选品（4 桶 SOP）</a>
+  <a href="https://charlescome1995-prog.github.io/crossmart-listing/listing.html" target="_top">📝 Listing</a>
+  <a href="https://charlescome1995-prog.github.io/crossmart-monitor/monitor.html" target="_top">📊 Monitor</a>
+  <a href="https://charlescome1995-prog.github.io/crossmart-ops/ops.html" target="_top">📈 Ops</a>
+  <a href="https://charlescome1995-prog.github.io/crossmart-simulator/simulator.html" target="_top">🔮 Simulator</a>
 </div>
 
-<div class="filters" id="filters">
-  <span class="stat"><strong id="totalCount">0</strong> products</span>
-  <span class="badge" id="dataDate">—</span>
-  <select id="strategyFilter" onchange="applyFilters()">
-    <option value="all">All Strategies</option>
-    <option value="blue">Blue Ocean</option>
-    <option value="red">Red Ocean</option>
-    <option value="diff">Differentiation</option>
-    <option value="follow">Follow</option>
-  </select>
-  <select id="sortFilter" onchange="applyFilters()">
-    <option value="score">Sort: Score ↓</option>
-    <option value="margin">Sort: Margin ↓</option>
-    <option value="price">Sort: Price ↓</option>
-    <option value="profit">Sort: Profit ↓</option>
-    <option value="reviews">Sort: Reviews ↑</option>
-  </select>
-  <input type="text" id="searchInput" placeholder="🔍 Search keyword/ASIN..." oninput="applyFilters()">
-  <div class="view-toggle">
-    <button class="active" onclick="setView('list')" id="viewList">List</button>
-    <button onclick="setView('grid')" id="viewGrid">Grid</button>
+<div class="meta-strip">
+  <div class="stat">
+    <strong id="totalCount">0</strong> 入桶 ·
+    <span id="generatedAt">—</span> ·
+    来源 <code>strategy.json</code>
+  </div>
+  <div class="ts">
+    老品库 <strong id="legacyCount">0</strong> 个 ·
+    <span id="legacyNames"></span>
   </div>
 </div>
 
-<div id="quickpick-wrap"></div>
+<div class="summary" id="summary"></div>
 
-<div id="app">
-  <div class="loading">⏳ Loading data...</div>
+<div class="search-bar">
+  <input id="searchInput" type="text" placeholder="🔍 搜索关键词或国家（例: butter / DE）...">
+  <span class="hint">点列头排序 · 点 Tab 切桶 · 点卡片跳桶</span>
 </div>
 
+<div class="tabs" id="tabs"></div>
+
+<div id="panels"></div>
+
+<footer>
+  数据: <code>data/strategy.json</code> ·
+  SOP 脚本: <code>backend/selectors/{quick_filter,triage,strategy_router,render_html}.py</code> ·
+  老品库: <code>backend/config/legacy_keywords.json</code> ·
+  流程文档: <code>SOP.md</code>
+</footer>
+
 <script>
-let allProducts = [];
-let currentView = 'list';
+const BUCKET_ORDER = ["品牌创新", "newrelease", "模仿跟风", "老款延伸"];
+const BUCKET_TIER = {"品牌创新":"🟢","newrelease":"🟡","模仿跟风":"🟡","老款延伸":"🟡"};
 
-function setView(v) {
-  currentView = v;
-  document.getElementById('viewList').className = v === 'list' ? 'active' : '';
-  document.getElementById('viewGrid').className = v === 'grid' ? 'active' : '';
-  applyFilters();
+let _strategy = null;
+let _activeBucket = "newrelease";  // 默认展示
+
+function fmtNum(n, suffix='') {
+  if (n === null || n === undefined || n === '' || isNaN(n)) return '-';
+  return Number(n).toLocaleString() + suffix;
 }
 
-function getScoreClass(score) {
-  if (score >= 85) return 'high';
-  if (score >= 70) return 'mid';
-  return 'low';
+function domainFor(country) {
+  return {UK:'amazon.co.uk', DE:'amazon.de', CA:'amazon.ca', US:'amazon.com'}[country] || 'amazon.com';
 }
 
-function rankClass(rank) {
-  if (rank === 1) return 'rank-1';
-  if (rank === 2) return 'rank-2';
-  if (rank === 3) return 'rank-3';
-  return 'rank-default';
+function legacyLabel(m) {
+  if (!m) return '-';
+  if (m.strength === 'strong') return `<span class="tag-legacy strong">🔥 ${m.legacy_kw}</span>`;
+  if (m.strength === 'medium') return `<span class="tag-legacy medium">🟡 ${m.legacy_kw || m.legacy_category}</span>`;
+  return '<span class="tag-legacy none">—</span>';
 }
 
-function displayNumber(n, suffix = '') {
-  if (!n && n !== 0) return '-';
-  return n.toLocaleString() + suffix;
+function tierTag(tier) {
+  if (!tier) return '';
+  const cls = tier === '🟢' ? 'green' : tier === '🟡' ? 'yellow' : 'red';
+  return `<span class="tag-tier ${cls}">${tier}</span>`;
 }
 
-// Translate Chinese strategy values from data to English for display
-function stratEN(s) {
-  const m = { '蓝海': 'Blue Ocean', '红海': 'Red Ocean', '差异化': 'Differentiation', '跟随': 'Follow' };
-  return m[s] || s || '-';
-}
-
-function detailHTML(p) {
-  const pct = (v) => (v || v === 0) ? (v * 100).toFixed(1) + '%' : '-';
-  const num = (v) => (v || v === 0) ? Number(v).toLocaleString() : '-';
-  const rankTrend = (p.rank_change_rate > 0) ? '📈 Up' : (p.rank_change_rate < 0 ? '📉 Down' : '→ Flat');
-  return `<div class="detail-grid">
-    <div><div class="detail-item"><span class="label">Strategy</span><span class="value">${stratEN(p.strategy)}</span></div>
-    <div class="detail-item"><span class="label">Score</span><span class="value">${p.score} (pass ${p.pass_rate}%)</span></div>
-    <div class="detail-item"><span class="label">Est. Margin</span><span class="value">${p.margin}%</span></div>
-    <div class="detail-item"><span class="label">Profit/Unit</span><span class="value">$${p.profit}</span></div>
-    <div class="detail-item"><span class="label">Price</span><span class="value">$${p.price}</span></div>
-    <div class="detail-item"><span class="label">Rating</span><span class="value">${p.rating ? '⭐' + p.rating : '-'} (${num(p.reviews)} reviews)</span></div>
-    <div class="detail-item"><span class="label">Monthly Search</span><span class="value">${num(p.monthly_search)}</span></div>
-    <div class="detail-item"><span class="label">Monthly Purchase</span><span class="value">${num(p.monthly_purchase)}</span></div>
-    <div class="detail-item"><span class="label">Ad Competitors</span><span class="value">${num(p.sellers)}</span></div>
-    <div class="detail-item"><span class="label">SPR</span><span class="value">${num(p.spr)}</span></div>
-    <div class="detail-item"><span class="label">Demand/Supply</span><span class="value">${p.need_supply || '-'}</span></div>
-    <div class="detail-item"><span class="label">PCP Bid</span><span class="value">$${p.pcp_price || '-'}</span></div>
-    <div class="detail-item"><span class="label">Conv. Concentration</span><span class="value">${pct(p.conv_conc)}</span></div>
-    <div class="detail-item"><span class="label">Click Concentration</span><span class="value">${pct(p.click_conc)}</span></div>
-    <div class="detail-item"><span class="label">Rank Change</span><span class="value">${num(p.rank_earliest)} → ${num(p.rank_latest)} ${rankTrend}</span></div>
-    <div class="detail-item"><span class="label">Seasonal</span><span class="value">${p.seasonal ? '⚠️ Seasonal' : '✅ Regular'}</span></div>
-    <div class="detail-item"><span class="label">Trending</span><span class="value">${p.trending ? '🔥 Trending' : '✅ Stable'}</span></div>
-    ${p.category ? '<div class="detail-item" style="grid-column:1/-1"><span class="label">Category</span><span class="value">' + p.category + '</span></div>' : ''}
-    ${p.scene ? '<div class="detail-item" style="grid-column:1/-1"><span class="label">User Scene</span><span class="value">' + p.scene + '</span></div>' : ''}
-    ${p.category_note ? '<div class="detail-item" style="grid-column:1/-1"><span class="label">Note</span><span class="value">' + p.category_note + '</span></div>' : ''}
-    <div class="detail-item" style="grid-column:1/-1"><span class="label">Link</span><span class="value"><a href="${p.url || ('https://www.amazon.com/s?k=' + encodeURIComponent(p.keyword||''))}" target="_blank" style="color:#007185">Amazon Search ↗</a></span></div>
-    </div>
-  </div>`;
-}
-
-function productRow(p, idx) {
-  const isActive = window._activeIdx === idx;
-  const sc = getScoreClass(p.score);
-  const scoreLabel = p.score >= 85 ? '🔥 Highly Recommended' : p.score >= 70 ? '⚡ Consider' : '👀 Watch';
-  return '<div class="prod-row' + (isActive ? ' active' : '') + '" onclick="toggleDetail(' + idx + ')">' +
-    '<div class="rank ' + rankClass(p.rank) + '">#' + p.rank + '</div>' +
-    '<div class="info">' +
-      '<div class="kw">' +
-        (p.keyword || '—') +
-        ' <a href="https://www.amazon.com/s?k=' + encodeURIComponent(p.keyword || '') + '" target="_blank">🔍</a>' +
-        ' <span class="score-pill ' + sc + '">' + p.score + ' ' + scoreLabel + '</span>' +
-      '</div>' +
-      '<div class="title">' + (p.category || p.scene || '—') + '</div>' +
-      '<div class="meta">' +
-        (p.strategy ? '<span class="tag" style="background:#e7f0ff;color:#0a58ca">' + stratEN(p.strategy) + '</span>' : '') +
-        '<span class="tag">⭐' + (p.rating || '-') + '</span>' +
-        '<span class="tag">💬' + displayNumber(p.reviews) + '</span>' +
-        '<span class="tag">📦' + (p.sellers || '-') + ' comp</span>' +
-        '<span class="tag gold">💰$' + (p.profit || '0') + '/unit</span>' +
-        (p.margin >= 25 ? '<span class="tag">📈' + p.margin + '%</span>' : '<span class="tag red">📉' + p.margin + '%</span>') +
-        (p.monthly_search ? '<span class="tag">🔍' + displayNumber(p.monthly_search) + '/mo</span>' : '') +
-      '</div>' +
-    '</div>' +
-    '<div class="price">$' + (p.price || '-') + '</div>' +
-    (isActive ? '<div class="detail-panel open">' + detailHTML(p) + '</div>' : '') +
-  '</div>';
-}
-
-function productCard(p, idx) {
-  const sc = getScoreClass(p.score);
-  const scoreLabel = p.score >= 85 ? '🔥' : p.score >= 70 ? '⚡' : '👀';
-  return '<div class="card" style="cursor:pointer" onclick="toggleDetail(' + idx + ')">' +
-    '<div style="padding:12px;display:flex;gap:12px;align-items:flex-start">' +
-      '<div class="rank ' + rankClass(p.keyword ? p.rank : p.rank + 100) + '" style="width:32px;height:32px;font-size:11px;flex-shrink:0">#' + p.rank + '</div>' +
-      '<div style="flex:1;min-width:0">' +
-        '<div style="font-weight:600;font-size:13px;color:#007185">' + (p.keyword || '—') + '</div>' +
-        '<div style="font-size:11px;color:#555;margin:2px 0;line-height:1.3">' + (p.strategy ? stratEN(p.strategy) + ' · ' : '') + (p.category ? p.category.substring(0,40) : (p.scene || '—')) + '</div>' +
-        '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">' +
-          '<span class="score-pill ' + sc + '" style="font-size:10px;padding:2px 7px">' + scoreLabel + ' ' + p.score + '</span>' +
-          '<span class="tag" style="font-size:10px">$' + (p.price||'-') + '</span>' +
-          '<span class="tag" style="font-size:10px">💰$' + (p.profit||'0') + '</span>' +
-          '<span class="tag" style="font-size:10px">📈' + (p.margin||'0') + '%</span>' +
-        '</div>' +
-      '</div>' +
-    '</div>' +
-  '</div>';
-}
-
-let _activeIdx = -1;
-
-function toggleDetail(idx) {
-  if (_activeIdx === idx) {
-    _activeIdx = -1;
-  } else {
-    _activeIdx = idx;
-  }
-  applyFilters();
-}
-
-let _qpCountry = 'ALL';
-let _qpData = null;
-
-function qpRenderHeader() {
-  if (!_qpData || !_qpData.items) return '';
-  const countries = ['ALL', ...new Set(_qpData.items.map(it => it.country))];
-  return countries.map(c => {
-    const cnt = c === 'ALL' ? _qpData.items.length : _qpData.items.filter(it => it.country === c).length;
-    return '<span class="qp-tab' + (c === _qpCountry ? ' active' : '') + '" onclick="qpSwitch(\'' + c + '\')">' + c + ' · ' + cnt + '</span>';
+function renderSummary() {
+  const wrap = document.getElementById('summary');
+  wrap.innerHTML = BUCKET_ORDER.map(name => {
+    const b = _strategy.buckets[name] || {};
+    return `<div class="card-stat" data-bucket="${name}" onclick="switchBucket('${name}')">
+      <div class="num">${b.count || 0}</div>
+      <div class="lb">${BUCKET_TIER[name]} ${name}</div>
+    </div>`;
   }).join('');
 }
 
-function qpSwitch(c) {
-  _qpCountry = c;
-  renderQuickPick();
+function renderTabs() {
+  const wrap = document.getElementById('tabs');
+  wrap.innerHTML = BUCKET_ORDER.map(name => {
+    const cnt = (_strategy.buckets[name] || {}).count || 0;
+    const active = name === _activeBucket ? ' active' : '';
+    return `<div class="tab${active}" data-bucket="${name}" onclick="switchBucket('${name}')">${BUCKET_TIER[name]} ${name} (${cnt})</div>`;
+  }).join('');
 }
 
-function qpRowHTML(it, idx) {
-  const m = it.metrics || {};
-  const monthBuy = m['月购_calc'] || 0;
-  const monthSearch = m['月搜'] || 0;
-  const needSupply = m['需供比'] || 0;
-  const cat = (it.category_top || '').replace(/&/g, '&amp;');
-  const kwEsc = (it.keyword || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const tags = (it.tags || []).map(t => '<span class="qp-tag">' + t + '</span>').join('');
-  const domain = it.country === 'UK' ? 'amazon.co.uk' : it.country === 'DE' ? 'amazon.de' : it.country === 'CA' ? 'amazon.ca' : 'amazon.com';
-  return '<div class="qp-row">' +
-    '<div class="qp-rank">' + (idx + 1) + '</div>' +
-    '<div class="qp-kw">' + kwEsc +
-      ' <a href="https://' + domain + '/s?k=' + encodeURIComponent(it.keyword || '') + '" target="_blank">🔍</a>' +
-      (cat ? '<div class="qp-cat">' + cat + '</div>' : '') +
-      tags +
-    '</div>' +
-    '<div class="qp-metric"><div class="v">' + monthBuy.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div><div class="lb">月购</div></div>' +
-    '<div class="qp-metric"><div class="v">' + monthSearch.toLocaleString() + '</div><div class="lb">月搜</div></div>' +
-    '<div class="qp-metric"><div class="v ' + (needSupply >= 20 ? 'green' : needSupply < 5 ? 'red' : '') + '">' + needSupply.toFixed(1) + '</div><div class="lb">需供比</div></div>' +
-  '</div>';
+function renderActionTemplate(name) {
+  const items = (_strategy.buckets[name] || {}).items || [];
+  if (!items.length) return '';
+  const t = items[0].action_template || {};
+  const actions = (t['核心动作'] || []).map(a => `<li>${a}</li>`).join('');
+  return `<div class="action-template show" data-bucket="${name}">
+    <div class="pri">📌 ${name} · ${t.priority || ''}</div>
+    <ul>${actions}</ul>
+    <div class="meta-line">⚠️ ${t['风险提示'] || ''}</div>
+    <div class="meta-line">📈 预期 ROI: ${t['预期 ROI'] || ''}</div>
+  </div>`;
 }
 
-function renderQuickPick() {
-  const wrap = document.getElementById('quickpick-wrap');
-  if (!wrap) return;
-  if (!_qpData || !_qpData.items || _qpData.items.length === 0) {
-    wrap.innerHTML = '';
-    return;
+function renderTable(name) {
+  const items = (_strategy.buckets[name] || {}).items || [];
+  if (!items.length) {
+    return `<table class="data" data-bucket="${name}"><tbody><tr><td class="empty">（该桶暂无候选）</td></tr></tbody></table>`;
   }
-  const items = _qpCountry === 'ALL' ? _qpData.items : _qpData.items.filter(it => it.country === _qpCountry);
-  const sorted = [...items].sort((a, b) => (b.metrics && b.metrics['月购_calc'] || 0) - (a.metrics && a.metrics['月购_calc'] || 0));
-  const top = sorted.slice(0, 20);
-  const ts = (_qpData.generated_at || '').replace('T', ' ').substring(0, 16);
-  wrap.innerHTML =
-    '<div class="qp-section">' +
-      '<div class="qp-header">' +
-        '<span>⚡ Quick-Pick Pool — 硬筛后的高优候选</span>' +
-        '<span class="qp-count">' + _qpData.items.length + ' items · ' + ts + '</span>' +
-      '</div>' +
-      '<div class="qp-tabs">' + qpRenderHeader() + '</div>' +
-      '<div class="qp-list">' + top.map(qpRowHTML).join('') + '</div>' +
-    '</div>';
+  const rows = items.map(it => {
+    const m = it.metrics || {};
+    const legacy = legacyLabel(it.legacy_match);
+    const tier = tierTag(it.tier_from_part_A);
+    const kw = (it.keyword || '').replace(/</g, '&lt;');
+    const c = it.country || '';
+    const domain = domainFor(c);
+    return `<tr data-kw="${kw.toLowerCase()}" data-country="${c.toLowerCase()}">
+      <td>${c}</td>
+      <td class="kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank" style="color:#007185;text-decoration:none">${kw} 🔍</a></td>
+      <td>${tier}</td>
+      <td class="num">${fmtNum(m['月购_calc'])}</td>
+      <td class="num">${fmtNum(m['需供比'],'')}</td>
+      <td class="num">${fmtNum(m['评分数'])}</td>
+      <td class="num">${fmtNum(m['SPR'])}</td>
+      <td class="num">${fmtNum(m['广告竞品数'])}</td>
+      <td class="num">${m['价格'] ? '$' + Number(m['价格']).toFixed(2) : '-'}</td>
+      <td class="num">${fmtNum(it.priority_score, '', 1)}</td>
+      <td>${legacy}</td>
+    </tr>`;
+  }).join('');
+  return `<table class="data" data-bucket="${name}">
+    <thead><tr>
+      <th data-col="country" data-type="str">国</th>
+      <th data-col="keyword" data-type="str">关键词</th>
+      <th data-col="tier" data-type="str">tier</th>
+      <th data-col="yg" data-type="num">月购</th>
+      <th data-col="xgb" data-type="num">需供</th>
+      <th data-col="pfs" data-type="num">评分</th>
+      <th data-col="spr" data-type="num">SPR</th>
+      <th data-col="ad" data-type="num">广告竞品</th>
+      <th data-col="price" data-type="num">价</th>
+      <th data-col="score" data-type="num">score</th>
+      <th data-col="legacy" data-type="str">前置老品</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
-async function loadQuickPick() {
-  try {
-    const r = await fetch('data/quick-pick.json?_=' + Date.now());
-    if (!r.ok) return;
-    _qpData = await r.json();
-    renderQuickPick();
-  } catch (e) {
-    console.warn('quick-pick load failed', e);
-  }
+function renderPanels() {
+  const wrap = document.getElementById('panels');
+  wrap.innerHTML = BUCKET_ORDER.map(name => {
+    const show = name === _activeBucket ? ' show' : '';
+    return `<div class="bucket-panel${show}" data-bucket="${name}">
+      ${renderActionTemplate(name)}
+      ${renderTable(name)}
+    </div>`;
+  }).join('');
 }
 
-function applyFilters() {
-  const strategy = document.getElementById('strategyFilter').value;
-  const sortBy = document.getElementById('sortFilter').value;
-  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+function switchBucket(name) {
+  _activeBucket = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.bucket === name));
+  document.querySelectorAll('.bucket-panel').forEach(p => p.classList.toggle('show', p.dataset.bucket === name));
+  document.querySelectorAll('.action-template').forEach(a => {
+    const match = a.dataset.bucket === name;
+    a.classList.toggle('show', match);
+  });
+  applySearch();
+}
 
-  let filtered = [...allProducts];
+function applySearch() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  const visiblePanel = document.querySelector(`.bucket-panel[data-bucket="${_activeBucket}"]`);
+  if (!visiblePanel) return;
+  visiblePanel.querySelectorAll('tbody tr').forEach(tr => {
+    if (!q) { tr.style.display = ''; return; }
+    const kw = tr.dataset.kw || '';
+    const c = tr.dataset.country || '';
+    tr.style.display = (kw.includes(q) || c.includes(q)) ? '' : 'none';
+  });
+}
 
-  // Strategy filter (中文策略值映射)
-  const stratMap = { blue: '蓝海', red: '红海', diff: '差异化', follow: '跟随' };
-  if (strategy && strategy !== 'all' && stratMap[strategy]) {
-    filtered = filtered.filter(p => p.strategy === stratMap[strategy]);
-  }
-
-  // Search
-  if (search) {
-    filtered = filtered.filter(p =>
-      (p.keyword || '').toLowerCase().includes(search) ||
-      (p.ASIN || '').toLowerCase().includes(search) ||
-      (p.title || '').toLowerCase().includes(search)
-    );
-  }
-
-  // Sort
-  const sortMap = {
-    'score': (a,b) => (b.score || 0) - (a.score || 0),
-    'margin': (a,b) => (b.margin || 0) - (a.margin || 0),
-    'price': (a,b) => (b.price || 0) - (a.price || 0),
-    'profit': (a,b) => (b.profit || 0) - (a.profit || 0),
-    'reviews': (a,b) => (a.reviews || 0) - (b.reviews || 0),
-  };
-  filtered.sort(sortMap[sortBy] || sortMap['score']);
-
-  // Re-rank
-  filtered.forEach((p, i) => p.rank = i + 1);
-
-  // Summary
-  const highScore = filtered.filter(p => p.score >= 85).length;
-  const highMargin = filtered.filter(p => p.margin >= 25).length;
-  const totalProfit = filtered.reduce((s, p) => s + (p.profit || 0), 0);
-
-  document.getElementById('totalCount').textContent = filtered.length;
-  document.querySelector('.badge').textContent =
-    `${highScore}🔥 High Score | ${highMargin}📈 High Margin | ~$${totalProfit.toFixed(0)} Profit/unit`;
-
-  // Render
-  const container = document.getElementById('app');
-
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="card"><div class="card-header">No matching products</div><div style="padding:20px;text-align:center;color:#999">Try adjusting the filters</div></div>';
-    return;
-  }
-
-  if (currentView === 'list') {
-    container.innerHTML = `
-      <div class="summary">
-        <div><div class="num" style="color:#067d62">${filtered.length}</div><div class="lb"><span class="icon">📦</span> Products</div></div>
-        <div><div class="num" style="color:#c89411">${highScore}</div><div class="lb"><span class="icon">🔥</span> Strong(≥85)</div></div>
-        <div><div class="num" style="color:#059669">${highMargin}</div><div class="lb"><span class="icon">💰</span> High Margin(≥25%)</div></div>
-        <div><div class="num">${filtered.reduce((s,p) => s + (p.reviews||0), 0).toLocaleString()}</div><div class="lb"><span class="icon">💬</span> Total Reviews</div></div>
-        <div><div class="num" style="color:#b12704">$${totalProfit.toFixed(0)}</div><div class="lb"><span class="icon">📊</span> Total Profit/unit</div></div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <span>🏆 Top ${filtered.length} Picks</span>
-          <span style="font-size:11px;color:#999">Click to expand</span>
-        </div>
-        ${filtered.map((p, i) => productRow(p, i)).join('')}
-      </div>`;
-  } else {
-    // Grid view
-    container.innerHTML = `
-      <div class="summary">
-        <div><div class="num" style="color:#067d62">${filtered.length}</div><div class="lb">📦 Products</div></div>
-        <div><div class="num" style="color:#c89411">${highScore}</div><div class="lb">🔥 Strong</div></div>
-        <div><div class="num" style="color:#059669">${highMargin}</div><div class="lb">💰 High Margin</div></div>
-        <div><div class="num">$${totalProfit.toFixed(0)}</div><div class="lb">💵 Total Profit/unit</div></div>
-        <div><div class="num" style="color:#b12704">${filtered.reduce((s,p) => s + (p.profit||0) * 300, 0).toFixed(0)}</div><div class="lb">📊 First Order(300u)</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;padding:0 16px 16px">
-        ${filtered.map((p, i) => productCard(p, i)).join('')}
-      </div>`;
-  }
+function attachSortHandlers() {
+  document.querySelectorAll('table.data th').forEach(th => {
+    th.addEventListener('click', () => {
+      const table = th.closest('table');
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      if (!rows.length || rows[0].querySelector('td.empty')) return;
+      const idx = Array.from(th.parentNode.children).indexOf(th);
+      const type = th.dataset.type;
+      const asc = !th.classList.contains('sort-asc');
+      table.querySelectorAll('th').forEach(x => x.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+      rows.sort((a, b) => {
+        const av = parseFloat(a.children[idx].innerText.replace(/[^\d.-]/g,'')) || 0;
+        const bv = parseFloat(b.children[idx].innerText.replace(/[^\d.-]/g,'')) || 0;
+        if (type === 'num') return asc ? av - bv : bv - av;
+        return asc ? a.children[idx].innerText.localeCompare(b.children[idx].innerText) : b.children[idx].innerText.localeCompare(a.children[idx].innerText);
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
 }
 
 async function load() {
   try {
-    const r = await fetch('data/selection-data.json?' + Date.now());
+    const r = await fetch('data/strategy.json?_=' + Date.now());
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-    allProducts = data.products || [];
-    const date = data.generated || '';
-    document.getElementById('dataDate').textContent = date ? date.substring(0,10) : '—';
-    applyFilters();
+    _strategy = await r.json();
+
+    // meta
+    const total = (_strategy.stats && _strategy.stats.in_buckets) || 0;
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('generatedAt').textContent = (_strategy.generated_at || '').replace('T', ' ').substring(0, 16);
+
+    // legacy
+    const lks = _strategy.legacy_keywords || [];
+    document.getElementById('legacyCount').textContent = lks.length;
+    document.getElementById('legacyNames').textContent = lks.map(l => l.zh || l.kw).join(' · ');
+
+    renderSummary();
+    renderTabs();
+    renderPanels();
+    attachSortHandlers();
+    applySearch();
   } catch(e) {
-    document.getElementById('app').innerHTML =
-      '<div class="card"><div class="card-header">⚠️ Failed to load data</div><div style="padding:20px;text-align:center;color:#999">' +
-      'Please ensure selection-data.json exists<br><span style="font-size:11px">' + e.message + '</span></div></div>';
+    document.getElementById('panels').innerHTML =
+      '<div style="padding:40px;text-align:center;color:#999">⚠️ 加载失败：' + e.message + '<br><br>请确认 <code>data/strategy.json</code> 存在</div>';
   }
 }
+
+document.getElementById('searchInput').addEventListener('input', applySearch);
 load();
-loadQuickPick();
 </script>
+
 </body>
 </html>

@@ -1,0 +1,21 @@
+# ip_names.txt — 影视/动漫/明星/书籍 IP 名（小写子串匹配）
+# 命中即归 🔴 砍档（IP 授权 + 仿牌风险，亚马逊严打）
+# 数据来源：本次 quick-pick 48 条漏网案例
+
+# === 歌手 IP（7/24 漏网） ===
+bad bunny
+bebe rexha
+tate mcrae
+# === 乐队 IP（7/24 漏网） ===
+judas priest
+# === K-pop（7/24 漏网） ===
+enhypen
+# === 动漫 IP（7/24 漏网） ===
+cowboy bebop
+schimanski
+# === 童书 IP（7/24 漏网） ===
+wonky donkey
+# === 影视 IP（按需补充） ===
+# star wars
+# marvel
+# disney

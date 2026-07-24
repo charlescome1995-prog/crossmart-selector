@@ -1,0 +1,27 @@
+# adult.txt — 成人/性用品黑名单（小写子串匹配）
+# 来源：ABA 关键词命中即砍
+# 说明：保留 quick_filter.py blacklist 中的成人/医药条目，单独成文件方便维护
+# 命中即归 🔴 砍档
+
+sex
+sexual
+adult toy
+lingerie
+vibrat
+dild
+porn
+erotic
+masturbat
+bdsm
+fetis
+bondage
+anal
+cock
+penis
+vagin
+underwear women sexy
+bra sexy
+thong sexy
+sex pillow
+masterbur
+masterbat

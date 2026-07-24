@@ -1,0 +1,32 @@
+{
+  "_comment": "老品关键词 - 老款延伸桶的前置老品。改了之后跑 strategy_router.py + render_html.py 即可。",
+  "_comment_2": "添加新词: 填 kw(英文亚马逊用词) / category(beauty/health/home/pet/baby/outdoors) / zh(中文释义)",
+  "version": "2026-07-24.1",
+  "legacy_keywords": [
+    {
+      "kw": "shea butter",
+      "category": "beauty",
+      "zh": "牛油膏"
+    },
+    {
+      "kw": "anti itch cream",
+      "category": "health",
+      "zh": "止痒膏"
+    },
+    {
+      "kw": "itch relief cream",
+      "category": "health",
+      "zh": "止痒膏"
+    },
+    {
+      "kw": "retinol eye cream",
+      "category": "beauty",
+      "zh": "视黄醇眼霜"
+    },
+    {
+      "kw": "batana oil",
+      "category": "beauty",
+      "zh": "batana oil"
+    }
+  ]
+}

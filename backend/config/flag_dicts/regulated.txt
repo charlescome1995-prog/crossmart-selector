@@ -1,0 +1,62 @@
+# regulated.txt — 强监管品类（小写子串匹配）
+# 命中即归 🟡 待观察（不是直接砍，但需合规 checklist）
+# 数据来源：本次 quick-pick 48 条 + FDA/EMA 监管品类清单
+# 维护规则：每条加一行，附监管机构 + 风险等级
+
+# === FDA 监管（美国站） ===
+fda_drug:
+  - medicine
+  - drug
+  - pill
+  - capsule
+  - tablet
+  - inhaler
+  - insulin
+  - tretinoin
+  - desmoxan
+  - bleaching
+  - methylene blue
+
+fda_supplement:
+  - supplement
+  - vitamin
+  - protein
+  - collagen
+  - probiotic
+
+# === EMA 监管（欧洲站） ===
+ema_cosmetic:
+  - retinoid  # 视黄醇衍生物
+  - essential oil
+
+# === 宠物药品（双监管） ===
+pet_pharma:
+  - flea
+  - worm
+  - deworm
+
+# === 婴幼儿特殊监管（FDA/EMA 都禁/限） ===
+infant_formula:
+  - infant formula
+  - baby formula
+
+# === 烟酒/危险品（直接禁售） ===
+banned:
+  - vape
+  - cigarette
+  - alcohol
+  - hookah
+  - cigar
+  - weapon
+  - gun
+  - knife set
+  - syringe
+  - needle
+
+# === 易碎/物流难（毛利被物流吃掉） ===
+fragile:
+  - glass
+  - mirror
+  - ceramic
+  - crystal
+  - porcelain

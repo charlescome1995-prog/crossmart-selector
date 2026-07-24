@@ -1,0 +1,1732 @@
+{
+  "schema_version": "triage.v1",
+  "source_pool": "quick-pick.json#2026-07-23.1",
+  "generated_at": "2026-07-24T10:40:25+08:00",
+  "thresholds": {
+    "A_月购_min": 300,
+    "B_需供比_min": 10,
+    "C_评分数_max_lt": 500,
+    "D_SPR_max_lt": 50
+  },
+  "flag_dicts": [
+    "adult",
+    "brand_words",
+    "ip_names",
+    "regulated",
+    "truncated"
+  ],
+  "stats": {
+    "input": 48,
+    "tier_count": {
+      "🟢": 2,
+      "🟡": 21,
+      "🔴": 25
+    },
+    "by_country_tier": {
+      "US": {
+        "🟢": 1,
+        "🟡": 1,
+        "🔴": 10
+      },
+      "UK": {
+        "🟢": 1,
+        "🟡": 9,
+        "🔴": 8
+      },
+      "DE": {
+        "🟢": 0,
+        "🟡": 11,
+        "🔴": 5
+      },
+      "CA": {
+        "🟢": 0,
+        "🟡": 0,
+        "🔴": 2
+      }
+    }
+  },
+  "items": [
+    {
+      "rank": 1,
+      "country": "US",
+      "keyword": "shee",
+      "category_top": "Home & Kitchen",
+      "metrics": {
+        "月搜": 66383.0,
+        "月购_calc": 5874.895,
+        "需供比": 12.6,
+        "价格": 18.99,
+        "评分数": 707.0,
+        "广告竞品数": 35.0,
+        "SPR": 134.0,
+        "点击集中度": 0.965,
+        "转化集中度": null,
+        "购买率": 0.088
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 5874.895,
+        "需供比": 12.6,
+        "评分数": 707.0,
+        "SPR": 134.0,
+        "价格": 18.99,
+        "点击集中度": 0.965,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": false,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "truncated"
+      ],
+      "reason": "残词/截断，砍"
+    },
+    {
+      "rank": 2,
+      "country": "UK",
+      "keyword": "gaviscon double action liquid",
+      "category_top": "Baby",
+      "metrics": {
+        "月搜": 14954.0,
+        "月购_calc": 3545.593,
+        "需供比": 253.5,
+        "价格": 16.875,
+        "评分数": 773.0,
+        "广告竞品数": 41.0,
+        "SPR": 81.0,
+        "点击集中度": 0.632,
+        "转化集中度": 0.569,
+        "购买率": 0.237
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 3545.593,
+        "需供比": 253.5,
+        "评分数": 773.0,
+        "SPR": 81.0,
+        "价格": 16.875,
+        "点击集中度": 0.632,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": false,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 3,
+      "country": "UK",
+      "keyword": "wonky donkey book",
+      "category_top": "-",
+      "metrics": {
+        "月搜": 3055.0,
+        "月购_calc": 1915.179,
+        "需供比": 29.1,
+        "价格": 22.363,
+        "评分数": 28.0,
+        "广告竞品数": 40.0,
+        "SPR": 44.0,
+        "点击集中度": 0.904,
+        "转化集中度": 0.606,
+        "购买率": 0.627
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 1915.179,
+        "需供比": 29.1,
+        "评分数": 28.0,
+        "SPR": 44.0,
+        "价格": 22.363,
+        "点击集中度": 0.904,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [
+        "ip_names"
+      ],
+      "reason": "IP 词，砍"
+    },
+    {
+      "rank": 4,
+      "country": "US",
+      "keyword": "essence nose ring diffuser",
+      "category_top": "Beauty & Personal Care",
+      "metrics": {
+        "月搜": 51232.0,
+        "月购_calc": 1460.112,
+        "需供比": 453.4,
+        "价格": 21.95,
+        "评分数": 722.0,
+        "广告竞品数": 47.0,
+        "SPR": 34.0,
+        "点击集中度": 0.684,
+        "转化集中度": 0.38,
+        "购买率": 0.029
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 1460.112,
+        "需供比": 453.4,
+        "评分数": 722.0,
+        "SPR": 34.0,
+        "价格": 21.95,
+        "点击集中度": 0.684,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "评分数偏高"
+    },
+    {
+      "rank": 5,
+      "country": "UK",
+      "keyword": "shampoo caps no rinse for elderly",
+      "category_top": "Health & Personal Care",
+      "metrics": {
+        "月搜": 7581.0,
+        "月购_calc": 1382.016,
+        "需供比": 17.2,
+        "价格": 21.238,
+        "评分数": 661.0,
+        "广告竞品数": 48.0,
+        "SPR": 32.0,
+        "点击集中度": 0.557,
+        "转化集中度": 0.378,
+        "购买率": 0.182
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 1382.016,
+        "需供比": 17.2,
+        "评分数": 661.0,
+        "SPR": 32.0,
+        "价格": 21.238,
+        "点击集中度": 0.557,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "评分数偏高"
+    },
+    {
+      "rank": 6,
+      "country": "US",
+      "keyword": "treluxe curly hair products for women",
+      "category_top": "Beauty & Personal Care",
+      "metrics": {
+        "月搜": 46656.0,
+        "月购_calc": 1105.747,
+        "需供比": 125.1,
+        "价格": 21.99,
+        "评分数": 185.0,
+        "广告竞品数": 29.0,
+        "SPR": 26.0,
+        "点击集中度": 0.656,
+        "转化集中度": 0.246,
+        "购买率": 0.024
+      },
+      "tier": "🟢",
+      "tier_score": {
+        "月购_calc": 1105.747,
+        "需供比": 125.1,
+        "评分数": 185.0,
+        "SPR": 26.0,
+        "价格": 21.99,
+        "点击集中度": 0.656,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [],
+      "reason": "ABCD 全过，可深挖"
+    },
+    {
+      "rank": 7,
+      "country": "US",
+      "keyword": "male masterburbatar",
+      "category_top": "Beauty & Personal Care",
+      "metrics": {
+        "月搜": 123528.0,
+        "月购_calc": 988.224,
+        "需供比": 772.1,
+        "价格": 59.98,
+        "评分数": 3.0,
+        "广告竞品数": 28.0,
+        "SPR": 23.0,
+        "点击集中度": 0.263,
+        "转化集中度": 0.066,
+        "购买率": 0.008
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 988.224,
+        "需供比": 772.1,
+        "评分数": 3.0,
+        "SPR": 23.0,
+        "价格": 59.98,
+        "点击集中度": 0.263,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [
+        "adult"
+      ],
+      "reason": "成人用品，砍"
+    },
+    {
+      "rank": 8,
+      "country": "US",
+      "keyword": "kni",
+      "category_top": "Tools & Home Improvement",
+      "metrics": {
+        "月搜": 25069.0,
+        "月购_calc": 742.042,
+        "需供比": 2089.1,
+        "价格": 44.0,
+        "评分数": 13.0,
+        "广告竞品数": 25.0,
+        "SPR": 17.0,
+        "点击集中度": 0.902,
+        "转化集中度": null,
+        "购买率": 0.03
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 742.042,
+        "需供比": 2089.1,
+        "评分数": 13.0,
+        "SPR": 17.0,
+        "价格": 44.0,
+        "点击集中度": 0.902,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [
+        "truncated"
+      ],
+      "reason": "残词/截断，砍"
+    },
+    {
+      "rank": 9,
+      "country": "US",
+      "keyword": "bad bunny vinyl",
+      "category_top": "Office Products",
+      "metrics": {
+        "月搜": 31832.0,
+        "月购_calc": 732.136,
+        "需供比": 530.5,
+        "价格": 31.99,
+        "评分数": 586.0,
+        "广告竞品数": 44.0,
+        "SPR": 17.0,
+        "点击集中度": 0.761,
+        "转化集中度": 0.856,
+        "购买率": 0.023
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 732.136,
+        "需供比": 530.5,
+        "评分数": 586.0,
+        "SPR": 17.0,
+        "价格": 31.99,
+        "点击集中度": 0.761,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "ip_names"
+      ],
+      "reason": "IP 词，砍"
+    },
+    {
+      "rank": 10,
+      "country": "UK",
+      "keyword": "enhypen",
+      "category_top": "Home & Kitchen",
+      "metrics": {
+        "月搜": 4823.0,
+        "月购_calc": 689.689,
+        "需供比": 5.4,
+        "价格": 26.238,
+        "评分数": 8.0,
+        "广告竞品数": 41.0,
+        "SPR": 16.0,
+        "点击集中度": 0.388,
+        "转化集中度": null,
+        "购买率": 0.143
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 689.689,
+        "需供比": 5.4,
+        "评分数": 8.0,
+        "SPR": 16.0,
+        "价格": 26.238,
+        "点击集中度": 0.388,
+        "passes_A": true,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "ip_names"
+      ],
+      "reason": "IP 词，砍"
+    },
+    {
+      "rank": 11,
+      "country": "UK",
+      "keyword": "atrixo intensive hand cream",
+      "category_top": "Beauty",
+      "metrics": {
+        "月搜": 2962.0,
+        "月购_calc": 606.025,
+        "需供比": 18.9,
+        "价格": 31.238,
+        "评分数": 285.0,
+        "广告竞品数": 43.0,
+        "SPR": 14.0,
+        "点击集中度": 0.597,
+        "转化集中度": 0.391,
+        "购买率": 0.205
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 606.025,
+        "需供比": 18.9,
+        "评分数": 285.0,
+        "SPR": 14.0,
+        "价格": 31.238,
+        "点击集中度": 0.597,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 12,
+      "country": "US",
+      "keyword": "healora cream for skin folds",
+      "category_top": "Beauty & Personal Care",
+      "metrics": {
+        "月搜": 54846.0,
+        "月购_calc": 597.821,
+        "需供比": 358.5,
+        "价格": 15.99,
+        "评分数": 77.0,
+        "广告竞品数": 47.0,
+        "SPR": 14.0,
+        "点击集中度": 0.474,
+        "转化集中度": 0.397,
+        "购买率": 0.011
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 597.821,
+        "需供比": 358.5,
+        "评分数": 77.0,
+        "SPR": 14.0,
+        "价格": 15.99,
+        "点击集中度": 0.474,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 13,
+      "country": "DE",
+      "keyword": "grillspieße lagerfeuer",
+      "category_top": "Küche, Haushalt & Wohnen",
+      "metrics": {
+        "月搜": 4350.0,
+        "月购_calc": 549.405,
+        "需供比": 18.1,
+        "价格": 23.749,
+        "评分数": 779.0,
+        "广告竞品数": 37.0,
+        "SPR": 13.0,
+        "点击集中度": 0.385,
+        "转化集中度": 0.17,
+        "购买率": 0.126
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 549.405,
+        "需供比": 18.1,
+        "评分数": 779.0,
+        "SPR": 13.0,
+        "价格": 23.749,
+        "点击集中度": 0.385,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "评分数偏高"
+    },
+    {
+      "rank": 14,
+      "country": "UK",
+      "keyword": "bebe rexha vinyl",
+      "category_top": "-",
+      "metrics": {
+        "月搜": 1707.0,
+        "月购_calc": 505.613,
+        "需供比": 426.8,
+        "价格": 21.863,
+        "评分数": 558.0,
+        "广告竞品数": 5.0,
+        "SPR": 12.0,
+        "点击集中度": 0.968,
+        "转化集中度": 0.952,
+        "购买率": 0.296
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 505.613,
+        "需供比": 426.8,
+        "评分数": 558.0,
+        "SPR": 12.0,
+        "价格": 21.863,
+        "点击集中度": 0.968,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "ip_names"
+      ],
+      "reason": "IP 词，砍"
+    },
+    {
+      "rank": 15,
+      "country": "UK",
+      "keyword": "snuzpod",
+      "category_top": "Baby",
+      "metrics": {
+        "月搜": 6295.0,
+        "月购_calc": 466.459,
+        "需供比": 49.6,
+        "价格": 32.987,
+        "评分数": 663.0,
+        "广告竞品数": 46.0,
+        "SPR": 11.0,
+        "点击集中度": 0.869,
+        "转化集中度": null,
+        "购买率": 0.074
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 466.459,
+        "需供比": 49.6,
+        "评分数": 663.0,
+        "SPR": 11.0,
+        "价格": 32.987,
+        "点击集中度": 0.869,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 16,
+      "country": "US",
+      "keyword": "toplux magnesium complex",
+      "category_top": "Health, Household & Baby Care",
+      "metrics": {
+        "月搜": 37607.0,
+        "月购_calc": 432.481,
+        "需供比": 83.0,
+        "价格": 18.95,
+        "评分数": 120.0,
+        "广告竞品数": 48.0,
+        "SPR": 10.0,
+        "点击集中度": 0.831,
+        "转化集中度": 0.763,
+        "购买率": 0.011
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 432.481,
+        "需供比": 83.0,
+        "评分数": 120.0,
+        "SPR": 10.0,
+        "价格": 18.95,
+        "点击集中度": 0.831,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 17,
+      "country": "UK",
+      "keyword": "flea and worm treatment for dogs",
+      "category_top": "Pet Supplies",
+      "metrics": {
+        "月搜": 5457.0,
+        "月购_calc": 426.192,
+        "需供比": 39.8,
+        "价格": 29.988,
+        "评分数": 251.0,
+        "广告竞品数": 19.0,
+        "SPR": 10.0,
+        "点击集中度": 0.495,
+        "转化集中度": 0.29,
+        "购买率": 0.078
+      },
+      "tier": "🟢",
+      "tier_score": {
+        "月购_calc": 426.192,
+        "需供比": 39.8,
+        "评分数": 251.0,
+        "SPR": 10.0,
+        "价格": 29.988,
+        "点击集中度": 0.495,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [],
+      "reason": "ABCD 全过，可深挖"
+    },
+    {
+      "rank": 18,
+      "country": "US",
+      "keyword": "lega",
+      "category_top": "Office Products",
+      "metrics": {
+        "月搜": 77761.0,
+        "月购_calc": 404.357,
+        "需供比": 3702.9,
+        "价格": 28.22,
+        "评分数": 15.0,
+        "广告竞品数": 18.0,
+        "SPR": 10.0,
+        "点击集中度": 0.897,
+        "转化集中度": null,
+        "购买率": 0.005
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 404.357,
+        "需供比": 3702.9,
+        "评分数": 15.0,
+        "SPR": 10.0,
+        "价格": 28.22,
+        "点击集中度": 0.897,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [
+        "truncated"
+      ],
+      "reason": "残词/截断，砍"
+    },
+    {
+      "rank": 19,
+      "country": "UK",
+      "keyword": "plant sterols to lower cholesterol",
+      "category_top": "Beauty",
+      "metrics": {
+        "月搜": 4605.0,
+        "月购_calc": 402.017,
+        "需供比": 61.4,
+        "价格": 16.863,
+        "评分数": 699.0,
+        "广告竞品数": 46.0,
+        "SPR": 10.0,
+        "点击集中度": 0.607,
+        "转化集中度": 0.619,
+        "购买率": 0.087
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 402.017,
+        "需供比": 61.4,
+        "评分数": 699.0,
+        "SPR": 10.0,
+        "价格": 16.863,
+        "点击集中度": 0.607,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "评分数偏高"
+    },
+    {
+      "rank": 20,
+      "country": "US",
+      "keyword": "powd",
+      "category_top": "Beauty & Personal Care",
+      "metrics": {
+        "月搜": 2598.0,
+        "月购_calc": 346.313,
+        "需供比": 185.6,
+        "价格": 15.6,
+        "评分数": 18.0,
+        "广告竞品数": 13.0,
+        "SPR": 8.0,
+        "点击集中度": 0.98,
+        "转化集中度": null,
+        "购买率": 0.133
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 346.313,
+        "需供比": 185.6,
+        "评分数": 18.0,
+        "SPR": 8.0,
+        "价格": 15.6,
+        "点击集中度": 0.98,
+        "passes_A": true,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": true
+      },
+      "risk_flags": [
+        "truncated"
+      ],
+      "reason": "残词/截断，砍"
+    },
+    {
+      "rank": 21,
+      "country": "UK",
+      "keyword": "cricket ball thrower",
+      "category_top": "Sports & Outdoors",
+      "metrics": {
+        "月搜": 2401.0,
+        "月购_calc": 299.405,
+        "需供比": 6.4,
+        "价格": 27.488,
+        "评分数": 26.0,
+        "广告竞品数": 42.0,
+        "SPR": 7.0,
+        "点击集中度": 0.867,
+        "转化集中度": 0.292,
+        "购买率": 0.125
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 299.405,
+        "需供比": 6.4,
+        "评分数": 26.0,
+        "SPR": 7.0,
+        "价格": 27.488,
+        "点击集中度": 0.867,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 22,
+      "country": "DE",
+      "keyword": "schwimmscheiben ab 1 jahr",
+      "category_top": "Baby",
+      "metrics": {
+        "月搜": 3674.0,
+        "月购_calc": 283.633,
+        "需供比": 7.2,
+        "价格": 34.808,
+        "评分数": 610.0,
+        "广告竞品数": 22.0,
+        "SPR": 7.0,
+        "点击集中度": 0.497,
+        "转化集中度": 0.455,
+        "购买率": 0.077
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 283.633,
+        "需供比": 7.2,
+        "评分数": 610.0,
+        "SPR": 7.0,
+        "价格": 34.808,
+        "点击集中度": 0.497,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 23,
+      "country": "US",
+      "keyword": "sweed lash serum",
+      "category_top": "Beauty & Personal Care",
+      "metrics": {
+        "月搜": 53301.0,
+        "月购_calc": 261.175,
+        "需供比": 135.3,
+        "价格": 65.0,
+        "评分数": 164.0,
+        "广告竞品数": 32.0,
+        "SPR": 6.0,
+        "点击集中度": 0.859,
+        "转化集中度": 0.758,
+        "购买率": 0.005
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 261.175,
+        "需供比": 135.3,
+        "评分数": 164.0,
+        "SPR": 6.0,
+        "价格": 65.0,
+        "点击集中度": 0.859,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 24,
+      "country": "UK",
+      "keyword": "magnesium gummies adult",
+      "category_top": "Health & Personal Care",
+      "metrics": {
+        "月搜": 3234.0,
+        "月购_calc": 259.69,
+        "需供比": 11.9,
+        "价格": 16.238,
+        "评分数": 534.0,
+        "广告竞品数": 45.0,
+        "SPR": 6.0,
+        "点击集中度": 0.367,
+        "转化集中度": 0.282,
+        "购买率": 0.08
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 259.69,
+        "需供比": 11.9,
+        "评分数": 534.0,
+        "SPR": 6.0,
+        "价格": 16.238,
+        "点击集中度": 0.367,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 25,
+      "country": "DE",
+      "keyword": "trinkbrunnen hund",
+      "category_top": "Haustier",
+      "metrics": {
+        "月搜": 3471.0,
+        "月购_calc": 229.433,
+        "需供比": 5.4,
+        "价格": 41.029,
+        "评分数": 238.0,
+        "广告竞品数": 27.0,
+        "SPR": 6.0,
+        "点击集中度": 0.316,
+        "转化集中度": 0.111,
+        "购买率": 0.066
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 229.433,
+        "需供比": 5.4,
+        "评分数": 238.0,
+        "SPR": 6.0,
+        "价格": 41.029,
+        "点击集中度": 0.316,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 26,
+      "country": "CA",
+      "keyword": "pretty litter",
+      "category_top": "Pet Supplies",
+      "metrics": {
+        "月搜": 15259.0,
+        "月购_calc": 222.781,
+        "需供比": 5.3,
+        "价格": 47.57,
+        "评分数": 102.0,
+        "广告竞品数": 42.0,
+        "SPR": 6.0,
+        "点击集中度": 0.775,
+        "转化集中度": 0.503,
+        "购买率": 0.015
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 222.781,
+        "需供比": 5.3,
+        "评分数": 102.0,
+        "SPR": 6.0,
+        "价格": 47.57,
+        "点击集中度": 0.775,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 27,
+      "country": "DE",
+      "keyword": "braun silk epil 7",
+      "category_top": "Drogerie & Körperpflege",
+      "metrics": {
+        "月搜": 3610.0,
+        "月购_calc": 196.384,
+        "需供比": 29.8,
+        "价格": 68.159,
+        "评分数": 488.0,
+        "广告竞品数": 33.0,
+        "SPR": 5.0,
+        "点击集中度": 0.628,
+        "转化集中度": 0.514,
+        "购买率": 0.054
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 196.384,
+        "需供比": 29.8,
+        "评分数": 488.0,
+        "SPR": 5.0,
+        "价格": 68.159,
+        "点击集中度": 0.628,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 28,
+      "country": "UK",
+      "keyword": "ninja blender cups",
+      "category_top": "Home & Kitchen",
+      "metrics": {
+        "月搜": 2685.0,
+        "月购_calc": 190.635,
+        "需供比": 16.1,
+        "价格": 19.988,
+        "评分数": 208.0,
+        "广告竞品数": 37.0,
+        "SPR": 5.0,
+        "点击集中度": 0.419,
+        "转化集中度": 0.429,
+        "购买率": 0.071
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 190.635,
+        "需供比": 16.1,
+        "评分数": 208.0,
+        "SPR": 5.0,
+        "价格": 19.988,
+        "点击集中度": 0.419,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 29,
+      "country": "UK",
+      "keyword": "flea trap",
+      "category_top": "Garden & Outdoors",
+      "metrics": {
+        "月搜": 3084.0,
+        "月购_calc": 189.666,
+        "需供比": 11.8,
+        "价格": 23.363,
+        "评分数": 230.0,
+        "广告竞品数": 45.0,
+        "SPR": 5.0,
+        "点击集中度": 0.347,
+        "转化集中度": 0.338,
+        "购买率": 0.061
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 189.666,
+        "需供比": 11.8,
+        "评分数": 230.0,
+        "SPR": 5.0,
+        "价格": 23.363,
+        "点击集中度": 0.347,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 30,
+      "country": "DE",
+      "keyword": "judas priest vinyl",
+      "category_top": "-",
+      "metrics": {
+        "月搜": 2767.0,
+        "月购_calc": 167.68,
+        "需供比": 15.3,
+        "价格": 32.389,
+        "评分数": 67.0,
+        "广告竞品数": 19.0,
+        "SPR": 4.0,
+        "点击集中度": 0.728,
+        "转化集中度": 0.6,
+        "购买率": 0.061
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 167.68,
+        "需供比": 15.3,
+        "评分数": 67.0,
+        "SPR": 4.0,
+        "价格": 32.389,
+        "点击集中度": 0.728,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "ip_names"
+      ],
+      "reason": "IP 词，砍"
+    },
+    {
+      "rank": 31,
+      "country": "CA",
+      "keyword": "braun thermometer",
+      "category_top": "Health & Personal Care",
+      "metrics": {
+        "月搜": 4412.0,
+        "月购_calc": 165.45,
+        "需供比": 23.3,
+        "价格": 35.415,
+        "评分数": 420.0,
+        "广告竞品数": 37.0,
+        "SPR": 4.0,
+        "点击集中度": 0.762,
+        "转化集中度": 0.696,
+        "购买率": 0.037
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 165.45,
+        "需供比": 23.3,
+        "评分数": 420.0,
+        "SPR": 4.0,
+        "价格": 35.415,
+        "点击集中度": 0.762,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 32,
+      "country": "UK",
+      "keyword": "butter bell",
+      "category_top": "Home & Kitchen",
+      "metrics": {
+        "月搜": 5792.0,
+        "月购_calc": 163.914,
+        "需供比": 50.4,
+        "价格": 17.488,
+        "评分数": 67.0,
+        "广告竞品数": 32.0,
+        "SPR": 4.0,
+        "点击集中度": 0.365,
+        "转化集中度": 0.333,
+        "购买率": 0.028
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 163.914,
+        "需供比": 50.4,
+        "评分数": 67.0,
+        "SPR": 4.0,
+        "价格": 17.488,
+        "点击集中度": 0.365,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 33,
+      "country": "DE",
+      "keyword": "magnet wasserbomben",
+      "category_top": "Sport & Freizeit",
+      "metrics": {
+        "月搜": 2935.0,
+        "月购_calc": 159.077,
+        "需供比": 21.7,
+        "价格": 24.786,
+        "评分数": 92.0,
+        "广告竞品数": 24.0,
+        "SPR": 4.0,
+        "点击集中度": 0.408,
+        "转化集中度": 0.357,
+        "购买率": 0.054
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 159.077,
+        "需供比": 21.7,
+        "评分数": 92.0,
+        "SPR": 4.0,
+        "价格": 24.786,
+        "点击集中度": 0.408,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 34,
+      "country": "DE",
+      "keyword": "weißer hai",
+      "category_top": "Spielzeug",
+      "metrics": {
+        "月搜": 2480.0,
+        "月购_calc": 156.488,
+        "需供比": 6.9,
+        "价格": 17.226,
+        "评分数": 761.0,
+        "广告竞品数": 17.0,
+        "SPR": 4.0,
+        "点击集中度": 0.836,
+        "转化集中度": null,
+        "购买率": 0.063
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 156.488,
+        "需供比": 6.9,
+        "评分数": 761.0,
+        "SPR": 4.0,
+        "价格": 17.226,
+        "点击集中度": 0.836,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 35,
+      "country": "DE",
+      "keyword": "tate mcrae",
+      "category_top": "Küche, Haushalt & Wohnen",
+      "metrics": {
+        "月搜": 3515.0,
+        "月购_calc": 154.309,
+        "需供比": 3.5,
+        "价格": 16.2,
+        "评分数": 15.0,
+        "广告竞品数": 12.0,
+        "SPR": 4.0,
+        "点击集中度": 0.618,
+        "转化集中度": null,
+        "购买率": 0.044
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 154.309,
+        "需供比": 3.5,
+        "评分数": 15.0,
+        "SPR": 4.0,
+        "价格": 16.2,
+        "点击集中度": 0.618,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "ip_names"
+      ],
+      "reason": "IP 词，砍"
+    },
+    {
+      "rank": 36,
+      "country": "DE",
+      "keyword": "elektrische fische",
+      "category_top": "Haustier",
+      "metrics": {
+        "月搜": 1745.0,
+        "月购_calc": 144.661,
+        "需供比": 8.0,
+        "价格": 18.349,
+        "评分数": 135.0,
+        "广告竞品数": 46.0,
+        "SPR": 4.0,
+        "点击集中度": 0.479,
+        "转化集中度": 0.158,
+        "购买率": 0.083
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 144.661,
+        "需供比": 8.0,
+        "评分数": 135.0,
+        "SPR": 4.0,
+        "价格": 18.349,
+        "点击集中度": 0.479,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 37,
+      "country": "UK",
+      "keyword": "mug warmer",
+      "category_top": "Home & Kitchen",
+      "metrics": {
+        "月搜": 3553.0,
+        "月购_calc": 141.054,
+        "需供比": 16.2,
+        "价格": 21.238,
+        "评分数": 639.0,
+        "广告竞品数": 49.0,
+        "SPR": 4.0,
+        "点击集中度": 0.533,
+        "转化集中度": 0.345,
+        "购买率": 0.04
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 141.054,
+        "需供比": 16.2,
+        "评分数": 639.0,
+        "SPR": 4.0,
+        "价格": 21.238,
+        "点击集中度": 0.533,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": false,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 38,
+      "country": "UK",
+      "keyword": "nespresso travel mug",
+      "category_top": "Sports & Outdoors",
+      "metrics": {
+        "月搜": 1689.0,
+        "月购_calc": 139.343,
+        "需供比": 8.0,
+        "价格": 37.775,
+        "评分数": 46.0,
+        "广告竞品数": 36.0,
+        "SPR": 4.0,
+        "点击集中度": 0.683,
+        "转化集中度": 0.786,
+        "购买率": 0.083
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 139.343,
+        "需供比": 8.0,
+        "评分数": 46.0,
+        "SPR": 4.0,
+        "价格": 37.775,
+        "点击集中度": 0.683,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 39,
+      "country": "US",
+      "keyword": "omni creatine gummies for women",
+      "category_top": "Health, Household & Baby Care",
+      "metrics": {
+        "月搜": 14329.0,
+        "月购_calc": 133.26,
+        "需供比": 59.2,
+        "价格": 49.99,
+        "评分数": 311.0,
+        "广告竞品数": 46.0,
+        "SPR": 4.0,
+        "点击集中度": 0.779,
+        "转化集中度": 0.46,
+        "购买率": 0.009
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 133.26,
+        "需供比": 59.2,
+        "评分数": 311.0,
+        "SPR": 4.0,
+        "价格": 49.99,
+        "点击集中度": 0.779,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "brand_words"
+      ],
+      "reason": "品牌词漏网，砍"
+    },
+    {
+      "rank": 40,
+      "country": "DE",
+      "keyword": "katzentrinkbrunnen kabellos",
+      "category_top": "Haustier",
+      "metrics": {
+        "月搜": 3586.0,
+        "月购_calc": 131.248,
+        "需供比": 18.4,
+        "价格": 39.852,
+        "评分数": 60.0,
+        "广告竞品数": 48.0,
+        "SPR": 3.0,
+        "点击集中度": 0.359,
+        "转化集中度": 0.226,
+        "购买率": 0.037
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 131.248,
+        "需供比": 18.4,
+        "评分数": 60.0,
+        "SPR": 3.0,
+        "价格": 39.852,
+        "点击集中度": 0.359,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 41,
+      "country": "DE",
+      "keyword": "bewässerungskugeln groß",
+      "category_top": "Garten",
+      "metrics": {
+        "月搜": 4498.0,
+        "月购_calc": 123.245,
+        "需供比": 12.0,
+        "价格": 18.349,
+        "评分数": 117.0,
+        "广告竞品数": 47.0,
+        "SPR": 3.0,
+        "点击集中度": 0.279,
+        "转化集中度": 0.188,
+        "购买率": 0.027
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 123.245,
+        "需供比": 12.0,
+        "评分数": 117.0,
+        "SPR": 3.0,
+        "价格": 18.349,
+        "点击集中度": 0.279,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 42,
+      "country": "UK",
+      "keyword": "builder gel nail kit",
+      "category_top": "Beauty",
+      "metrics": {
+        "月搜": 4972.0,
+        "月购_calc": 114.356,
+        "需供比": 6.8,
+        "价格": 28.738,
+        "评分数": 411.0,
+        "广告竞品数": 49.0,
+        "SPR": 3.0,
+        "点击集中度": 0.369,
+        "转化集中度": 0.158,
+        "购买率": 0.023
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 114.356,
+        "需供比": 6.8,
+        "评分数": 411.0,
+        "SPR": 3.0,
+        "价格": 28.738,
+        "点击集中度": 0.369,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 43,
+      "country": "UK",
+      "keyword": "rebound net",
+      "category_top": "Sports & Outdoors",
+      "metrics": {
+        "月搜": 3519.0,
+        "月购_calc": 112.608,
+        "需供比": 25.5,
+        "价格": 22.488,
+        "评分数": 463.0,
+        "广告竞品数": 32.0,
+        "SPR": 3.0,
+        "点击集中度": 0.683,
+        "转化集中度": 0.091,
+        "购买率": 0.032
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 112.608,
+        "需供比": 25.5,
+        "评分数": 463.0,
+        "SPR": 3.0,
+        "价格": 22.488,
+        "点击集中度": 0.683,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 44,
+      "country": "DE",
+      "keyword": "schlachter bibel 2000",
+      "category_top": "-",
+      "metrics": {
+        "月搜": 4246.0,
+        "月购_calc": 106.999,
+        "需供比": 7.8,
+        "价格": 32.292,
+        "评分数": 445.0,
+        "广告竞品数": 39.0,
+        "SPR": 3.0,
+        "点击集中度": 0.491,
+        "转化集中度": 0.485,
+        "购买率": 0.025
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 106.999,
+        "需供比": 7.8,
+        "评分数": 445.0,
+        "SPR": 3.0,
+        "价格": 32.292,
+        "点击集中度": 0.491,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 45,
+      "country": "DE",
+      "keyword": "weinkühler edelstahl",
+      "category_top": "Küche, Haushalt & Wohnen",
+      "metrics": {
+        "月搜": 3619.0,
+        "月购_calc": 106.399,
+        "需供比": 8.6,
+        "价格": 21.492,
+        "评分数": 101.0,
+        "广告竞品数": 37.0,
+        "SPR": 3.0,
+        "点击集中度": 0.395,
+        "转化集中度": 0.314,
+        "购买率": 0.029
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 106.399,
+        "需供比": 8.6,
+        "评分数": 101.0,
+        "SPR": 3.0,
+        "价格": 21.492,
+        "点击集中度": 0.395,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 46,
+      "country": "DE",
+      "keyword": "poolleiter bestway",
+      "category_top": "Garten",
+      "metrics": {
+        "月搜": 2979.0,
+        "月购_calc": 105.754,
+        "需供比": 22.6,
+        "价格": 52.92,
+        "评分数": 436.0,
+        "广告竞品数": 13.0,
+        "SPR": 3.0,
+        "点击集中度": 0.381,
+        "转化集中度": 0.3,
+        "购买率": 0.035
+      },
+      "tier": "🟡",
+      "tier_score": {
+        "月购_calc": 105.754,
+        "需供比": 22.6,
+        "评分数": 436.0,
+        "SPR": 3.0,
+        "价格": 52.92,
+        "点击集中度": 0.381,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [],
+      "reason": "月购未达线"
+    },
+    {
+      "rank": 47,
+      "country": "DE",
+      "keyword": "schimanski",
+      "category_top": "-",
+      "metrics": {
+        "月搜": 3264.0,
+        "月购_calc": 103.795,
+        "需供比": 31.4,
+        "价格": 69.347,
+        "评分数": 496.0,
+        "广告竞品数": 11.0,
+        "SPR": 3.0,
+        "点击集中度": 0.331,
+        "转化集中度": 0.25,
+        "购买率": 0.032
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 103.795,
+        "需供比": 31.4,
+        "评分数": 496.0,
+        "SPR": 3.0,
+        "价格": 69.347,
+        "点击集中度": 0.331,
+        "passes_A": false,
+        "passes_B": true,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "ip_names"
+      ],
+      "reason": "IP 词，砍"
+    },
+    {
+      "rank": 48,
+      "country": "DE",
+      "keyword": "cowboy bebop",
+      "category_top": "-",
+      "metrics": {
+        "月搜": 4624.0,
+        "月购_calc": 101.266,
+        "需供比": 3.5,
+        "价格": 20.412,
+        "评分数": 331.0,
+        "广告竞品数": 47.0,
+        "SPR": 3.0,
+        "点击集中度": 0.611,
+        "转化集中度": 0.5,
+        "购买率": 0.022
+      },
+      "tier": "🔴",
+      "tier_score": {
+        "月购_calc": 101.266,
+        "需供比": 3.5,
+        "评分数": 331.0,
+        "SPR": 3.0,
+        "价格": 20.412,
+        "点击集中度": 0.611,
+        "passes_A": false,
+        "passes_B": false,
+        "passes_C": true,
+        "passes_D": true,
+        "passes_ABCs": false
+      },
+      "risk_flags": [
+        "ip_names"
+      ],
+      "reason": "IP 词，砍"
+    }
+  ]
+}
