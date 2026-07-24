@@ -3,68 +3,82 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CrossMart - Product Selector (4-Bucket SOP)</title>
+<title>CrossMart Selector</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Times New Roman",Times,"PingFang SC","Microsoft YaHei",serif;background:#eaeded;color:#0f1111;font-size:14px;min-height:100vh}
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Times New Roman",Times,"PingFang SC","Microsoft YaHei",serif}
+body{background:#f4f7f6;color:#333;padding:0;font-size:13px}
 
-/* Topbar */
-.topbar{background:linear-gradient(135deg,#131921 0%,#232f3e 100%);color:white;padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+/* ===== Topbar (borrowed from monitor.html) ===== */
+.topbar{background:linear-gradient(135deg,#131921 0%,#232f3e 100%);color:white;display:flex;align-items:center;gap:14px;padding:10px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .topbar .logo{font-weight:700;font-size:15px;letter-spacing:.5px}
 .topbar a{color:#ccc;text-decoration:none;padding:5px 12px;border-radius:6px;font-size:13px;transition:all .2s}
 .topbar a:hover{background:rgba(255,255,255,.1);color:#fff}
 .topbar a.active{background:#e94560;color:white}
 
-/* Meta strip */
-.meta-strip{background:white;padding:8px 20px;border-bottom:1px solid #d5d9d9;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#555}
-.meta-strip .stat strong{color:#0f1111}
-.meta-strip .ts{color:#888}
+/* ===== Container (borrowed from monitor.html) ===== */
+.container{padding:12px;max-width:100vw;overflow-x:hidden}
 
-/* Bucket summary cards */
-.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 20px;background:linear-gradient(135deg,#fafafa,#f0f2f2);border-bottom:1px solid #e6e8ea}
-.summary .card-stat{text-align:center;padding:8px 12px;background:white;border-radius:8px;border-left:4px solid #ddd;cursor:pointer;transition:transform .15s}
-.summary .card-stat:hover{transform:translateY(-2px);box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.summary .card-stat[data-bucket="品牌创新"]{border-left-color:#2ecc71}
-.summary .card-stat[data-bucket="newrelease"]{border-left-color:#f1c40f}
-.summary .card-stat[data-bucket="模仿跟风"]{border-left-color:#e67e22}
-.summary .card-stat[data-bucket="老款延伸"]{border-left-color:#9b59b6}
-.summary .num{font-size:22px;font-weight:700;color:#0f1111}
-.summary .lb{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+/* ===== Header card (config-matrix style) ===== */
+.header-card{background:#fff;padding:14px;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid #e2e8f0}
+.action-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed #e2e8f0;flex-wrap:wrap;gap:10px}
+.title-tag{font-size:12px;font-weight:700;color:#1e293b;background:#f1f5f9;padding:4px 10px;border-radius:4px;border:1px solid #cbd5e1}
+.title-hint{font-size:11px;color:#94a3b8}
+.ctrl-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctrl-group .stat{font-size:12px;padding:4px 10px;border-radius:20px;background:#e2e8f0;color:#64748b;white-space:nowrap}
+.ctrl-group .stat strong{color:#1e293b;font-weight:700}
 
-/* Search */
-.search-bar{padding:10px 20px;background:white;border-bottom:1px solid #e6e8ea;display:flex;gap:10px;align-items:center}
-.search-bar input{flex:1;padding:7px 12px;border:1px solid #d5d9d9;border-radius:6px;font-size:13px}
-.search-bar .hint{font-size:11px;color:#888}
+/* ===== Bucket tabs (sticky) ===== */
+.tabs-strip{background:#fff;padding:8px 14px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;position:sticky;top:48px;z-index:99;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.tabs-strip .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-right:6px}
+.tab{padding:5px 12px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;transition:.15s}
+.tab:hover{background:#e2e8f0}
+.tab.active{background:#e94560;color:#fff;border-color:#e94560}
+.tab-count{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,.08);font-size:10px}
+.tab.active .tab-count{background:rgba(255,255,255,.25)}
 
-/* Tabs */
-.tabs{display:flex;gap:4px;padding:0 20px;background:#fafafa;border-bottom:2px solid #e6e8ea;position:sticky;top:48px;z-index:99}
-.tab{padding:10px 16px;cursor:pointer;font-size:13px;color:#666;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
-.tab:hover{background:#f0f0f0}
-.tab.active{color:#2c3e50;border-bottom-color:#3498db;font-weight:600}
+/* ===== Search bar (filter-bar style) ===== */
+.filter-bar{background:#fff;padding:12px;border-radius:6px 6px 0 0;border:1px solid #e2e8f0;border-bottom:none;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:0}
+.filter-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.filter-controls input{padding:6px 12px;border:1px solid #cbd5e1;border-radius:4px;width:280px;font-size:13px}
 
-/* Action template */
-.action-template{background:#fffbf0;border:1px solid #ffe082;border-radius:6px;padding:10px 16px;margin:12px 20px;font-size:12px;display:none}
+/* ===== Action template ===== */
+.action-template{background:#fffbf0;border:1px solid #ffe082;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:12px;display:none}
 .action-template.show{display:block}
-.action-template .pri{font-weight:600;color:#92400e;margin-bottom:6px}
+.action-template .pri{font-weight:700;color:#92400e;margin-bottom:6px;font-size:13px}
 .action-template ul{margin:4px 0;padding-left:20px}
 .action-template li{margin:2px 0}
 .action-template .meta-line{margin-top:4px;color:#666;font-size:11px}
 
-/* Tables */
-.bucket-panel{padding:0 20px 20px;display:none}
-.bucket-panel.show{display:block}
-table.data{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:12px;margin-top:8px}
-table.data th{background:#fafafa;padding:9px 6px;text-align:left;border-bottom:2px solid #eee;cursor:pointer;user-select:none;font-weight:600;color:#444;white-space:nowrap;font-size:11px}
-table.data th:hover{background:#f0f0f0}
+/* ===== Tables (table-container / monitor-table style) ===== */
+.table-container{background:#fff;border-radius:0 0 6px 6px;border:1px solid #e2e8f0;border-top:none;overflow-x:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);max-width:100%;margin-bottom:16px}
+table.data{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;text-align:left;overflow:hidden}
+table.data th{background:#f8fafc;padding:10px 8px;font-size:11px;font-weight:700;color:#334155;border-bottom:2px solid #e2e8f0;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;user-select:none}
+table.data th:hover{background:#f1f5f9}
 table.data th::after{content:' ⇅';opacity:.3;font-size:9px}
-table.data th.sort-asc::after{content:' ▲';opacity:1;color:#3498db}
-table.data th.sort-desc::after{content:' ▼';opacity:1;color:#3498db}
-table.data td{padding:7px 6px;border-bottom:1px solid #f0f0f0;font-size:12px}
-table.data td.kw{font-family:ui-monospace,"Cascadia Code","Consolas",monospace;font-size:11px;font-weight:600;color:#007185}
+table.data th.sort-asc::after{content:' ▲';opacity:1;color:#e94560}
+table.data th.sort-desc::after{content:' ▼';opacity:1;color:#e94560}
+table.data td{padding:8px 6px;border-bottom:1px solid #f0f0f0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.data td.kw{font-weight:600;color:#007185;font-family:ui-monospace,"Cascadia Code","Consolas",monospace;font-size:11px}
+table.data td.kw a{color:#007185;text-decoration:none}
+table.data td.kw a:hover{color:#c45500;text-decoration:underline}
 table.data td.num{text-align:right;font-variant-numeric:tabular-nums}
 table.data tr:hover{background:#f8fbff}
-table.data td.empty{text-align:center;color:#999;padding:24px}
+table.data td.empty{text-align:center;color:#94a3b8;padding:32px;font-size:13px}
 
+/* column widths (must total 100%) */
+.col-country{width:4%}
+.col-kw{width:24%}
+.col-tier{width:6%}
+.col-yg{width:7%}
+.col-xgb{width:7%}
+.col-pfs{width:7%}
+.col-spr{width:6%}
+.col-ad{width:7%}
+.col-price{width:7%}
+.col-score{width:7%}
+.col-legacy{width:18%}
+
+/* ===== Tags ===== */
 .tag-tier{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600}
 .tag-tier.green{background:#d1fae5;color:#065f46}
 .tag-tier.yellow{background:#fef3c7;color:#92400e}
@@ -75,71 +89,141 @@ table.data td.empty{text-align:center;color:#999;padding:24px}
 .tag-legacy.medium{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}
 .tag-legacy.none{background:#f3f4f6;color:#9ca3af;border-color:#e5e7eb}
 
-footer{padding:16px 20px;color:#888;font-size:11px;text-align:center;border-top:1px solid #e6e8ea;background:#fafafa}
+/* ===== Footer ===== */
+footer{padding:16px 20px;color:#94a3b8;font-size:11px;text-align:center;border-top:1px solid #e2e8f0;background:#fafafa;margin-top:16px}
 footer code{font-family:ui-monospace,monospace;font-size:10px;background:#f0f0f0;padding:1px 5px;border-radius:3px}
+
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <span class="logo">🎯 CrossMart Selector</span>
-  <a href="selection.html" class="active">🎯 选品（4 桶 SOP）</a>
+  <a href="https://charlescome1995-prog.github.io/crossmart-selector/selection.html" target="_top">🎯 Selector</a>
   <a href="https://charlescome1995-prog.github.io/crossmart-listing/listing.html" target="_top">📝 Listing</a>
   <a href="https://charlescome1995-prog.github.io/crossmart-monitor/monitor.html" target="_top">📊 Monitor</a>
   <a href="https://charlescome1995-prog.github.io/crossmart-ops/ops.html" target="_top">📈 Ops</a>
   <a href="https://charlescome1995-prog.github.io/crossmart-simulator/simulator.html" target="_top">🔮 Simulator</a>
 </div>
 
-<div class="meta-strip">
-  <div class="stat">
-    <strong id="totalCount">0</strong> 入桶 ·
-    <span id="generatedAt">—</span> ·
-    来源 <code>strategy.json</code>
+<div class="container">
+
+  <!-- HEADER CARD (config-matrix style from monitor.html) -->
+  <div class="header-card">
+    <div class="action-row">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="title-tag">Product Selector (4-Bucket SOP)</div>
+        <div class="title-hint">Left 5 cols = Product Metrics | Right 1 col = Legacy Match</div>
+      </div>
+      <div class="ctrl-group">
+        <span class="stat"><strong id="totalCount">0</strong> in-bucket</span>
+        <span class="stat">Updated: <strong id="generatedAt">—</strong></span>
+        <span class="stat">Legacy: <strong id="legacyCount">0</strong></span>
+      </div>
+    </div>
   </div>
-  <div class="ts">
-    老品库 <strong id="legacyCount">0</strong> 个 ·
-    <span id="legacyNames"></span>
+
+  <!-- BUCKET TABS -->
+  <div class="tabs-strip">
+    <span class="lbl">Bucket:</span>
+    <div id="tabs"></div>
   </div>
+
+  <!-- FILTER BAR (search) -->
+  <div class="filter-bar">
+    <div class="filter-controls">
+      <input id="searchInput" type="text" placeholder="Search keyword or country (e.g. butter / DE)...">
+    </div>
+    <span class="title-hint">Click column headers to sort · Click tabs to switch bucket</span>
+  </div>
+
+  <!-- PANELS (4 buckets) -->
+  <div id="panels"></div>
+
 </div>
-
-<div class="summary" id="summary"></div>
-
-<div class="search-bar">
-  <input id="searchInput" type="text" placeholder="🔍 搜索关键词或国家（例: butter / DE）...">
-  <span class="hint">点列头排序 · 点 Tab 切桶 · 点卡片跳桶</span>
-</div>
-
-<div class="tabs" id="tabs"></div>
-
-<div id="panels"></div>
 
 <footer>
-  数据: <code>data/strategy.json</code> ·
-  SOP 脚本: <code>backend/selectors/{quick_filter,triage,strategy_router,render_html}.py</code> ·
-  老品库: <code>backend/config/legacy_keywords.json</code> ·
-  流程文档: <code>SOP.md</code>
+  Source: <code>data/strategy.json</code> ·
+  Pipeline: <code>backend/selectors/{quick_filter,triage,strategy_router,render_html}.py</code> ·
+  Legacy: <code>backend/config/legacy_keywords.json</code> ·
+  Doc: <code>SOP.md</code>
 </footer>
 
 <script>
-const BUCKET_ORDER = ["品牌创新", "newrelease", "模仿跟风", "老款延伸"];
-const BUCKET_TIER = {"品牌创新":"🟢","newrelease":"🟡","模仿跟风":"🟡","老款延伸":"🟡"};
+const BUCKET_ORDER = ["Brand Innovation", "New Release", "Follow Crowd", "Legacy Extension"];
+const BUCKET_META = {
+  "Brand Innovation":  {tier: "🟢", rule: "Reviews <200 AND Ad Competitors <15"},
+  "New Release":       {tier: "🟡", rule: "Reviews 200-800 AND Ad Competitors <15"},
+  "Follow Crowd":      {tier: "🟡", rule: "Reviews 200-800 AND Ad Competitors 15-50"},
+  "Legacy Extension":  {tier: "🟡", rule: "Reviews <200 AND Ad Competitors 15-50"},
+};
+const BUCKET_ACTION = {
+  "Brand Innovation": {
+    priority: "Test-First",
+    actions: [
+      "Low-budget multi-ASIN spread · pick the winner in 30 days",
+      "Listing copy = category education (user awareness low)",
+      "PPC on category root words + long-tail variants",
+      "3-5 ASIN A/B test, 30 days to verdict"
+    ],
+    risk: "Low CTR expected, do not chase ROI early",
+    roi: "6-12 months ramp · long profit curve"
+  },
+  "New Release": {
+    priority: "Position-First",
+    actions: [
+      "Differentiated main image + video + early review rush",
+      "PPC on long-tail + competitor ASINs",
+      "Push BSR in first 30 days (BD/LD if needed)",
+      "Title / 5 bullets carry core long-tail keywords"
+    ],
+    risk: "Others just started · you have differentiation window",
+    roi: "3-6 months payback · medium profit curve"
+  },
+  "Follow Crowd": {
+    priority: "Optimize-First",
+    actions: [
+      "Average profit · Listing quality war (title / A+ / video / pkg)",
+      "PPC on conversion (precise keywords + high bid)",
+      "FBA must be A+ · avoid being outpaced by competitors",
+      "Prepare for price war (margin <25% = stay out)"
+    ],
+    risk: "Demand proven · competition fierce · differentiation hard",
+    roi: "2-4 months payback · short but stable"
+  },
+  "Legacy Extension": {
+    priority: "Bundle-First",
+    actions: [
+      "Harvest top traffic · variant extension (color / size / pack)",
+      "PPC on association slots (competitor ASINs + category nodes)",
+      "Packaging differentiation (bundle sets + gift packs)",
+      "Find sub-scenes not covered by top sellers"
+    ],
+    risk: "Top sellers testing variants · you ride the wave via differentiation",
+    roi: "2-3 months payback · short curve"
+  },
+};
 
 let _strategy = null;
-let _activeBucket = "newrelease";  // 默认展示
+let _activeBucket = "New Release";
 
-function fmtNum(n, suffix='') {
+function fmtNum(n) {
   if (n === null || n === undefined || n === '' || isNaN(n)) return '-';
-  return Number(n).toLocaleString() + suffix;
+  return Number(n).toLocaleString();
 }
 
 function domainFor(country) {
   return {UK:'amazon.co.uk', DE:'amazon.de', CA:'amazon.ca', US:'amazon.com'}[country] || 'amazon.com';
 }
 
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function legacyLabel(m) {
-  if (!m) return '-';
-  if (m.strength === 'strong') return `<span class="tag-legacy strong">🔥 ${m.legacy_kw}</span>`;
-  if (m.strength === 'medium') return `<span class="tag-legacy medium">🟡 ${m.legacy_kw || m.legacy_category}</span>`;
+  if (!m) return '<span class="tag-legacy none">—</span>';
+  if (m.strength === 'strong') return `<span class="tag-legacy strong">🔥 ${escapeHtml(m.legacy_kw)}</span>`;
+  if (m.strength === 'medium') return `<span class="tag-legacy medium">🟡 ${escapeHtml(m.legacy_kw || m.legacy_category)}</span>`;
   return '<span class="tag-legacy none">—</span>';
 }
 
@@ -149,81 +233,95 @@ function tierTag(tier) {
   return `<span class="tag-tier ${cls}">${tier}</span>`;
 }
 
-function renderSummary() {
-  const wrap = document.getElementById('summary');
-  wrap.innerHTML = BUCKET_ORDER.map(name => {
-    const b = _strategy.buckets[name] || {};
-    return `<div class="card-stat" data-bucket="${name}" onclick="switchBucket('${name}')">
-      <div class="num">${b.count || 0}</div>
-      <div class="lb">${BUCKET_TIER[name]} ${name}</div>
-    </div>`;
-  }).join('');
+// reverse-lookup: backend name → display name
+function displayName(b) { return BUCKET_ORDER.includes(b) ? b : b; }
+
+// map backend bucket name to display bucket name (we keep same names, just for clarity)
+function bucketOf(item) {
+  // backend uses Chinese keys; we keep display names in English
+  return _strategy._bucketMap && _strategy._bucketMap[item._backendBucket] || item._backendBucket || '';
 }
 
 function renderTabs() {
   const wrap = document.getElementById('tabs');
   wrap.innerHTML = BUCKET_ORDER.map(name => {
-    const cnt = (_strategy.buckets[name] || {}).count || 0;
+    const b = findBucket(name);
+    const cnt = b ? b.count : 0;
     const active = name === _activeBucket ? ' active' : '';
-    return `<div class="tab${active}" data-bucket="${name}" onclick="switchBucket('${name}')">${BUCKET_TIER[name]} ${name} (${cnt})</div>`;
+    return `<div class="tab${active}" data-bucket="${name}" onclick="switchBucket('${name}')">${BUCKET_META[name].tier} ${name}<span class="tab-count">${cnt}</span></div>`;
   }).join('');
 }
 
+function findBucket(displayName) {
+  // displayName ↔ backend key
+  const map = {"Brand Innovation":"品牌创新", "New Release":"newrelease", "Follow Crowd":"模仿跟风", "Legacy Extension":"老款延伸"};
+  const backendKey = map[displayName];
+  return _strategy.buckets[backendKey];
+}
+
 function renderActionTemplate(name) {
-  const items = (_strategy.buckets[name] || {}).items || [];
-  if (!items.length) return '';
-  const t = items[0].action_template || {};
-  const actions = (t['核心动作'] || []).map(a => `<li>${a}</li>`).join('');
+  const b = findBucket(name);
+  if (!b || !b.items || !b.items.length) return '';
+  const t = BUCKET_ACTION[name];
+  const actions = t.actions.map(a => `<li>${a}</li>`).join('');
   return `<div class="action-template show" data-bucket="${name}">
-    <div class="pri">📌 ${name} · ${t.priority || ''}</div>
+    <div class="pri">📌 ${name} · ${t.priority}</div>
     <ul>${actions}</ul>
-    <div class="meta-line">⚠️ ${t['风险提示'] || ''}</div>
-    <div class="meta-line">📈 预期 ROI: ${t['预期 ROI'] || ''}</div>
+    <div class="meta-line">⚠️ ${t.risk}</div>
+    <div class="meta-line">📈 Expected ROI: ${t.roi}</div>
   </div>`;
 }
 
 function renderTable(name) {
-  const items = (_strategy.buckets[name] || {}).items || [];
+  const b = findBucket(name);
+  const items = b ? b.items : [];
   if (!items.length) {
-    return `<table class="data" data-bucket="${name}"><tbody><tr><td class="empty">（该桶暂无候选）</td></tr></tbody></table>`;
+    return `<div class="table-container"><table class="data"><tbody><tr><td class="empty">(no candidates in this bucket)</td></tr></tbody></table></div>`;
   }
   const rows = items.map(it => {
     const m = it.metrics || {};
     const legacy = legacyLabel(it.legacy_match);
     const tier = tierTag(it.tier_from_part_A);
-    const kw = (it.keyword || '').replace(/</g, '&lt;');
+    const kw = escapeHtml(it.keyword);
     const c = it.country || '';
     const domain = domainFor(c);
     return `<tr data-kw="${kw.toLowerCase()}" data-country="${c.toLowerCase()}">
-      <td>${c}</td>
-      <td class="kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank" style="color:#007185;text-decoration:none">${kw} 🔍</a></td>
-      <td>${tier}</td>
-      <td class="num">${fmtNum(m['月购_calc'])}</td>
-      <td class="num">${fmtNum(m['需供比'],'')}</td>
-      <td class="num">${fmtNum(m['评分数'])}</td>
-      <td class="num">${fmtNum(m['SPR'])}</td>
-      <td class="num">${fmtNum(m['广告竞品数'])}</td>
-      <td class="num">${m['价格'] ? '$' + Number(m['价格']).toFixed(2) : '-'}</td>
-      <td class="num">${fmtNum(it.priority_score, '', 1)}</td>
-      <td>${legacy}</td>
+      <td class="col-country">${c}</td>
+      <td class="col-kw kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank">${kw}</a> 🔍</td>
+      <td class="col-tier">${tier}</td>
+      <td class="col-yg num">${fmtNum(m['月购_calc'])}</td>
+      <td class="col-xgb num">${fmtNum(m['需供比'])}</td>
+      <td class="col-pfs num">${fmtNum(m['评分数'])}</td>
+      <td class="col-spr num">${fmtNum(m['SPR'])}</td>
+      <td class="col-ad num">${fmtNum(m['广告竞品数'])}</td>
+      <td class="col-price num">${m['价格'] ? '$' + Number(m['价格']).toFixed(2) : '-'}</td>
+      <td class="col-score num">${fmtNum(it.priority_score)}</td>
+      <td class="col-legacy">${legacy}</td>
     </tr>`;
   }).join('');
-  return `<table class="data" data-bucket="${name}">
-    <thead><tr>
-      <th data-col="country" data-type="str">国</th>
-      <th data-col="keyword" data-type="str">关键词</th>
-      <th data-col="tier" data-type="str">tier</th>
-      <th data-col="yg" data-type="num">月购</th>
-      <th data-col="xgb" data-type="num">需供</th>
-      <th data-col="pfs" data-type="num">评分</th>
-      <th data-col="spr" data-type="num">SPR</th>
-      <th data-col="ad" data-type="num">广告竞品</th>
-      <th data-col="price" data-type="num">价</th>
-      <th data-col="score" data-type="num">score</th>
-      <th data-col="legacy" data-type="str">前置老品</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
+  return `<div class="table-container">
+    <table class="data">
+      <colgroup>
+        <col class="col-country"><col class="col-kw"><col class="col-tier">
+        <col class="col-yg"><col class="col-xgb"><col class="col-pfs"><col class="col-spr">
+        <col class="col-ad"><col class="col-price"><col class="col-score"><col class="col-legacy">
+      </colgroup>
+      <thead><tr>
+        <th data-col="country" data-type="str">Country</th>
+        <th data-col="keyword" data-type="str">Keyword</th>
+        <th data-col="tier" data-type="str">Tier</th>
+        <th data-col="yg" data-type="num">Buy/mo</th>
+        <th data-col="xgb" data-type="num">D/S</th>
+        <th data-col="pfs" data-type="num">Reviews</th>
+        <th data-col="spr" data-type="num">SPR</th>
+        <th data-col="ad" data-type="num">Ad Comp</th>
+        <th data-col="price" data-type="num">Price</th>
+        <th data-col="score" data-type="num">Score</th>
+        <th data-col="legacy" data-type="str">Legacy Match</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 function renderPanels() {
@@ -240,10 +338,14 @@ function renderPanels() {
 function switchBucket(name) {
   _activeBucket = name;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.bucket === name));
-  document.querySelectorAll('.bucket-panel').forEach(p => p.classList.toggle('show', p.dataset.bucket === name));
+  document.querySelectorAll('.bucket-panel').forEach(p => {
+    p.classList.toggle('show', p.dataset.bucket === name);
+    p.style.display = p.dataset.bucket === name ? '' : 'none';
+  });
   document.querySelectorAll('.action-template').forEach(a => {
     const match = a.dataset.bucket === name;
     a.classList.toggle('show', match);
+    a.style.display = match ? '' : 'none';
   });
   applySearch();
 }
@@ -289,24 +391,20 @@ async function load() {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     _strategy = await r.json();
 
-    // meta
     const total = (_strategy.stats && _strategy.stats.in_buckets) || 0;
     document.getElementById('totalCount').textContent = total;
     document.getElementById('generatedAt').textContent = (_strategy.generated_at || '').replace('T', ' ').substring(0, 16);
 
-    // legacy
     const lks = _strategy.legacy_keywords || [];
     document.getElementById('legacyCount').textContent = lks.length;
-    document.getElementById('legacyNames').textContent = lks.map(l => l.zh || l.kw).join(' · ');
 
-    renderSummary();
     renderTabs();
     renderPanels();
     attachSortHandlers();
     applySearch();
   } catch(e) {
     document.getElementById('panels').innerHTML =
-      '<div style="padding:40px;text-align:center;color:#999">⚠️ 加载失败：' + e.message + '<br><br>请确认 <code>data/strategy.json</code> 存在</div>';
+      '<div style="padding:40px;text-align:center;color:#94a3b8">⚠️ Load failed: ' + e.message + '<br><br>Please ensure <code>data/strategy.json</code> exists</div>';
   }
 }
 
