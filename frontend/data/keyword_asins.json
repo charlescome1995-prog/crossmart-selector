@@ -1,45 +1,31 @@
 {
   "meta": {
-    "source": "Edge Cache f_0004d1 (Amazon US srp)",
-    "fetched_at": "2026-07-25T10:40:40",
-    "complete": false,
-    "total_keywords": 2,
-    "note": "Edge 9225 CDP broken on this Windows; used Edge disk Cache fallback. SellerSprite injects DOM only into live page (browser memory); not persisted. Amazon US does not recognize Chinese keyword 冠军艾娜 (returns no-results). Real data is from storage bins (user searched it in Edge at 10:21:56)."
+    "source": "Edge CDP via Chrome DevTools Protocol (port 9225, temp profile + --load-extension)",
+    "fetched_at": "2026-07-25T11:23:42",
+    "complete": true,
+    "total_keywords": 1,
+    "note": "Edge 9225 CDP fixed by using temp profile + --load-extension=SellerSprite. SellerSprite on srp injects icons only (no inline LQS text); details require per-card click or detail-page visit. 42/48 cards have SS icon present."
   },
   "records": {
-    "US::冠军艾娜": {
-      "country": "US",
-      "keyword": "冠军艾娜",
-      "asin_count": 0,
-      "asin_list": [],
-      "detail": [],
-      "seller_sprite": {
-        "has_panel": false,
-        "note": "srp page not loaded (Edge cache has NO RESULTS page only)"
-      },
-      "fetched_at": "2026-07-25T10:40:40",
-      "bucket": "Test",
-      "edge_history_url": "https://www.amazon.com/s?k=冠军艾娜 (visited 10:14:39, no dwell)"
-    },
     "US::storage bins": {
       "country": "US",
       "keyword": "storage bins",
       "asin_count": 48,
       "asin_list": [
         "B0H3KSXC25",
+        "B0GPS742LV",
+        "B0H713Q1XD",
         "B0FDWLX8QP",
-        "B0H6PR95G4",
         "B0GH9325VG",
         "B001RCUNJ8",
+        "B0H79H5SY4",
         "B0F6FT397Y",
-        "B0GTQ1L7YT",
-        "B0GPS742LV",
         "B0711RQMNF",
-        "B00CQGTGXS",
         "B0GYF91BXB",
-        "B09ZV2TX28",
-        "B0D9325NSK",
+        "B00CQGTGXS",
         "B0CHRP96MS",
+        "B0D9325NSK",
+        "B09ZV2TX28",
         "B0BC8VSWC7",
         "B082PJN8BD",
         "B002BDTETW",
@@ -47,433 +33,530 @@
         "B0DGF616XN",
         "B0CGJJJC4M",
         "B09TTNNB2M",
-        "B09TTQ2V83",
         "B0F1J1LHD6",
+        "B09TTQ2V83",
         "B0DRWGR7Y1",
         "B0BZCTXKPZ",
+        "B09TTS4WKJ",
         "B0DQGQ9Z4X",
-        "B09TTP4RC9",
+        "B00CQGTGZQ",
         "B0FCYF8FYD",
-        "B08BQBNXSQ",
         "B08KXKVT4K",
+        "B09TTP4RC9",
+        "B083YSF4CT",
+        "B08BQBNXSQ",
+        "B0GL4S4BQM",
         "B0FXXG1LVK",
         "B092ZDHJMN",
-        "B083YSF4CT",
-        "B0GL4S4BQM",
         "B000LDF0UG",
-        "B0DFLQPY2R",
         "B0BMFKGVXD",
-        "B073V1SPHP",
-        "B0FKVBW2B2",
+        "B0DFLQPY2R",
         "B07PQ6GWQQ",
-        "B082PJPQ1Y",
-        "B0D1CFZ5L8",
-        "B00KL7VPWO",
-        "B0FBG5W85J",
-        "B085ZV98JM",
+        "B0FKVBW2B2",
         "B0CXLK9PJ9",
+        "B082PJPQ1Y",
         "B01HDPY7RG",
-        "B0D92YJ4VZ"
+        "B00KL7VPWO",
+        "B085ZV98JM",
+        "B073V1SPHP",
+        "B0FBG5W85J"
       ],
       "detail": [
         {
           "asin": "B0H3KSXC25",
+          "rank": 1,
           "title": "6 Pack 27 Gallon Heavy Duty Storage Bins with Snap Lids, Durable Plastic Storage Totes with Stackable Black Containers & Yellow Latching Covers for Home Garage Moving Organization",
           "price": "$59.99",
-          "rating": "4.4 out of 5 stars",
-          "reviews": "(16)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0FDWLX8QP",
-          "title": "8 Pack Extra Large Clothes Storage Bins with Lids, Storage Bags with Reinforced Handles & Heavy-Duty Zippers, Moving Bags, Moving Boxes Totes for Clothes Packing, Dorms, College Supplies, Clear",
-          "price": "$29.99",
-          "rating": "4.8 out of 5 stars",
-          "reviews": "(3.6K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0H6PR95G4",
-          "title": "Large Plastic Storage Bin with Lid – Stackable Container with Handles, Durable, Easy Clean, for Clothes, Linens, Bedroom, Closet, Craft Room, Light Purple",
-          "price": "$8.99",
-          "rating": "",
-          "reviews": "",
-          "sponsored": false
-        },
-        {
-          "asin": "B0GH9325VG",
-          "title": "Sterilite Industrial Storage Tote with Lids for Garage, 27 Gallon, 4-Pack | Heavy-Duty and Stackable Utility Box Containers for Home, Office, and Basement Organization, Black/Yellow",
-          "price": "$82.99",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(196)",
-          "sponsored": false
-        },
-        {
-          "asin": "B001RCUNJ8",
-          "title": "Sterilite 4 Pack Ultra Latching Box, Storage Bins with Lids, Clear Plastic, 70 Quart - Heavy-Duty Organizing Containers for Closet, Bathroom, and Office",
-          "price": "$69.78",
-          "rating": "4.5 out of 5 stars",
-          "reviews": "(12.9K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0F6FT397Y",
-          "title": "IRIS USA 4-Pack 13 Quart Storage Bins with Lids, Clear | Transparent design makes contents easy to find. Ideal for shoes, photos, documents, and small essentials. Nestable design.",
-          "price": "$24.88",
-          "rating": "4.1 out of 5 stars",
-          "reviews": "(34.2K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0GTQ1L7YT",
-          "title": "EOENVIVS 15L Clear Storage Bins with Lids, 4 Pack Stackable Plastic Storage Containers with Lids, Latching Storage Boxes and Organizer Bins for Closet, Toys, Crafts and Office",
-          "price": "$36.99",
-          "rating": "",
-          "reviews": "",
-          "sponsored": false
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "16 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0GPS742LV",
+          "rank": 2,
           "title": "IRIS USA 6-Pack 32 Quart Clip Box with Latching Lid, Frosted | Latching lid secures office and household supplies. Stackable, nestable design maximizes storage space.",
           "price": "$44.18",
-          "rating": "4.4 out of 5 stars",
-          "reviews": "(26.2K)",
-          "sponsored": false
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "26,221 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B0H713Q1XD",
+          "rank": 3,
+          "title": "160 Quart Wheeled Stacker, Extra Large Durable Clear Bin, Latch Lid and Pull Handle, Gray, 2 Count",
+          "price": "$58.90",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B0FDWLX8QP",
+          "rank": 4,
+          "title": "8 Pack Extra Large Clothes Storage Bins with Lids, Storage Bags with Reinforced Handles & Heavy-Duty Zippers, Moving Bags, Moving Boxes Totes for Clothes Packing, Dorms, College Supplies, Clear",
+          "price": "$29.99",
+          "rating": "4.8 out of 5 stars, rating details",
+          "reviews": "3,672 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B0GH9325VG",
+          "rank": 5,
+          "title": "Sterilite Industrial Storage Tote with Lids for Garage, 27 Gallon, 4-Pack | Heavy-Duty and Stackable Utility Box Containers for Home, Office, and Basement Organization, Black/Yellow",
+          "price": "$82.99",
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "196 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B001RCUNJ8",
+          "rank": 6,
+          "title": "Sterilite 4 Pack Ultra Latching Box, Storage Bins with Lids, Clear Plastic, 70 Quart - Heavy-Duty Organizing Containers for Closet, Bathroom, and Office",
+          "price": "$69.78",
+          "rating": "4.5 out of 5 stars, rating details",
+          "reviews": "12,958 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B0H79H5SY4",
+          "rank": 7,
+          "title": "27 Gallon Large Storage Bin with Snap Lid, Black and Red, 2 Pack | Durable Construction: Durable Construction:Efficient Stacking:Generous Capacity",
+          "price": "$23.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B0F6FT397Y",
+          "rank": 8,
+          "title": "IRIS USA 4-Pack 13 Quart Storage Bins with Lids, Clear | Transparent design makes contents easy to find. Ideal for shoes, photos, documents, and small essentials. Nestable design.",
+          "price": "$24.88",
+          "rating": "4.1 out of 5 stars, rating details",
+          "reviews": "34,240 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0711RQMNF",
+          "rank": 9,
           "title": "Amazon Basics Collapsible Fabric Storage Cubes Organizer with Handles, Sturdy Storage Bins for Organization, 10.5\" x 10.5\" x 11\", Beige, 6-Pack",
           "price": "$17.84",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(119.1K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B00CQGTGXS",
-          "title": "IRIS USA 6-Pack 54 Quart Storage Bins with Lids, Clear | Transparent design makes contents easy to find. Perfect for moving, blankets, clothing, and garage storage. Nestable design.",
-          "price": "$90.05",
-          "rating": "4.1 out of 5 stars",
-          "reviews": "(34.2K)",
-          "sponsored": false
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "119,122 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0GYF91BXB",
+          "rank": 10,
           "title": "HOMESURE Supports 200lbs Heavy Duty Moving Bags - Strong Zipper & Wrap-Around Handles - Water-Resistant Storage Totes, Durable Alternative to Moving Boxes - 8 Pack - Semi-Transparent",
           "price": "$26.99",
-          "rating": "4.8 out of 5 stars",
-          "reviews": "(7.2K)",
-          "sponsored": false
+          "rating": "4.8 out of 5 stars, rating details",
+          "reviews": "7,257 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
-          "asin": "B09ZV2TX28",
-          "title": "Lifewit 6 Pack Clothes Storage Bins with Lids, Foldable Blanket Storage Bags with Zippers, Clear Window and Reinforced Handles, Closet and Organization for Clothing, Sweater, Comforter, Bedding",
-          "price": "$16.99",
-          "rating": "4.5 out of 5 stars",
-          "reviews": "(109.9K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0D9325NSK",
-          "title": "Sterilite 4-Pack Industrial Tote, Plastic Storage Container Bins with Lids, 38 Gallon - Heavy-Duty Organizing Containers for Closet, Bathroom, and Office | Heavy-Duty and Stackable Utility Box Contain",
-          "price": "$119.99",
-          "rating": "4.8 out of 5 stars",
-          "reviews": "(309)",
-          "sponsored": false
+          "asin": "B00CQGTGXS",
+          "rank": 11,
+          "title": "IRIS USA 6-Pack 54 Quart Storage Bins with Lids, Clear | Transparent design makes contents easy to find. Perfect for moving, blankets, clothing, and garage storage. Nestable design.",
+          "price": "$90.05",
+          "rating": "4.1 out of 5 stars, rating details",
+          "reviews": "34,240 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0CHRP96MS",
+          "rank": 12,
           "title": "YFXCVSL 4 Tier Plastic Storage Bins with Lid 23QT, Stackable Storage Bins | Plastic Storage Bins with Wheels, Folding Storage Boxes, Organizers and Storage for Living Room,Office,Dorm",
           "price": "$30.35",
-          "rating": "4.4 out of 5 stars",
-          "reviews": "(7.6K)",
-          "sponsored": false
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "7,605 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B0D9325NSK",
+          "rank": 13,
+          "title": "Sterilite 4-Pack Industrial Tote, Plastic Storage Container Bins with Lids, 38 Gallon - Heavy-Duty Organizing Containers for Closet, Bathroom, and Office | Heavy-Duty and Stackable Utility Box Contain",
+          "price": "$119.99",
+          "rating": "4.8 out of 5 stars, rating details",
+          "reviews": "309 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B09ZV2TX28",
+          "rank": 14,
+          "title": "Lifewit 6 Pack Clothes Storage Bins with Lids, Foldable Blanket Storage Bags with Zippers, Clear Window and Reinforced Handles, Closet and Organization for Clothing, Sweater, Comforter, Bedding",
+          "price": "$16.99",
+          "rating": "4.5 out of 5 stars, rating details",
+          "reviews": "109,978 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0BC8VSWC7",
+          "rank": 15,
           "title": "Vtopmart 6 Pack Clear Stackable Storage Bins with Lids, Large Plastic Containers with Handle for Pantry Organizer and Storage,Perfect for Bathroom,Cabinet,Kitchen,Fridge,Closet Organization",
           "price": "$27.89",
-          "rating": "4.6 out of 5 stars",
-          "reviews": "(6.3K)",
-          "sponsored": false
+          "rating": "4.6 out of 5 stars, rating details",
+          "reviews": "6,373 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B082PJN8BD",
+          "rank": 16,
           "title": "Rubbermaid Cleverstore Clear 32 Qt, 6 Pack Stackable Plastic Storage Bins with Lids, Great for Closet and Laundry Storage, Organizing in the Home",
           "price": "$83.00",
-          "rating": "4.5 out of 5 stars",
-          "reviews": "(2.8K)",
-          "sponsored": false
+          "rating": "4.5 out of 5 stars, rating details",
+          "reviews": "2,809 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B002BDTETW",
+          "rank": 17,
           "title": "Sterilite 12-Pack 6 Quart Storage Boxes, Stackable Clear Plastic Bins with Snap-On Lids – Heavy-Duty Organizing Containers for Closet, Bathroom, and Office",
           "price": "$31.99",
-          "rating": "4.6 out of 5 stars",
-          "reviews": "(14.2K)",
-          "sponsored": false
+          "rating": "4.6 out of 5 stars, rating details",
+          "reviews": "14,255 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B001RCUNK2",
+          "rank": 18,
           "title": "Sterilite 4-Pack Ultra Latching Box, Storage Bins with Lids, Clear Plastic, 116 Quart - Heavy-Duty Organizing Containers for Closet, Bathroom, and Office",
           "price": "$106.98",
-          "rating": "4.5 out of 5 stars",
-          "reviews": "(12.9K)",
-          "sponsored": false
+          "rating": "4.5 out of 5 stars, rating details",
+          "reviews": "12,958 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0DGF616XN",
+          "rank": 19,
           "title": "6 Pack Extra Heavy Duty Large Moving Bags with Strong Zipper & Comfortable Handles, Sturdy & Durable Clothes Storage Bags Totes Bins, Blue Packing Moving Boxes for College Supplies, Dark Blue",
           "price": "$23.98",
-          "rating": "4.8 out of 5 stars",
-          "reviews": "(11.2K)",
-          "sponsored": false
+          "rating": "4.8 out of 5 stars, rating details",
+          "reviews": "11,218 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0CGJJJC4M",
+          "rank": 20,
           "title": "SNSLXH 5 Pack Stackable Closet Storage Basket, Multifunctional & Foldable Closet Organizer for Bathroom Kitchen Laundry Room Wardrobe Storage, Space-Saving Clothes Storage Drawer Organizer, White | 5 ",
-          "price": "$39.99",
-          "rating": "4.5 out of 5 stars",
-          "reviews": "(4.6K)",
-          "sponsored": false
+          "price": "$35.95",
+          "rating": "4.5 out of 5 stars, rating details",
+          "reviews": "4,679 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B09TTNNB2M",
+          "rank": 21,
           "title": "Amazon Basics Collapsible Fabric Storage Bins with Handles, Cube Organizer for Home Organization, 10.5\"x10.5\"x11\", White/Light Grey Stripe, 6-Pack",
           "price": "$15.29",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(119.1K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B09TTQ2V83",
-          "title": "Amazon Basics Collapsible Fabric Storage Cube Bins Organizer with Handles for Organization and Organizing Solution, 13\"x13\"x13\", Beige, 6-Pack",
-          "price": "$22.94",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(119.1K)",
-          "sponsored": false
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "119,122 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0F1J1LHD6",
+          "rank": 22,
           "title": "IRIS USA 6-Pack 72 Quart Storage Bins with Lids, Clear | Transparent design makes contents easy to find. Perfect for moving, blankets, clothing, and garage storage. Nestable design.",
           "price": "$84.99",
-          "rating": "4.2 out of 5 stars",
-          "reviews": "(3.2K)",
-          "sponsored": false
+          "rating": "4.2 out of 5 stars, rating details",
+          "reviews": "3,279 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B09TTQ2V83",
+          "rank": 23,
+          "title": "Amazon Basics Collapsible Fabric Storage Cube Bins Organizer with Handles for Organization and Organizing Solution, 13\"x13\"x13\", Beige, 6-Pack",
+          "price": "$22.94",
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "119,122 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0DRWGR7Y1",
+          "rank": 24,
           "title": "Sterilite Latch Tote Storage with Lids for Home & Office, 12 Gallon, 6-Pack | Heavy-Duty and Stackable Plastic Containers with Latches for Closet, Cabinet, Bedroom, Bathroom and Dorm Room Organization",
           "price": "$62.99",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(129)",
-          "sponsored": false
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "129 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0BZCTXKPZ",
+          "rank": 25,
           "title": "Vtopmart 4 Pack Large Stackable Storage Drawers,Easily Assemble Acrylic Bathroom Closet Undersink Organizers and Storage,Plastic Bins for Kitchen Cabinets,Pantry,Makeup,Medicine Organization",
           "price": "$31.89",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(5.7K)",
-          "sponsored": false
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "5,759 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B09TTS4WKJ",
+          "rank": 26,
+          "title": "Amazon Basics Collapsible Fabric Storage Cubes Organizer with Handles, Sturdy Storage Bins, White, 10.5-x-10.5-x-11-inch, 6-Pack",
+          "price": "$15.29",
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "119,122 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0DQGQ9Z4X",
+          "rank": 27,
           "title": "Vtopmart 6 Qt Plastic Storage Bins with Lids, Clear Sensory Bins, Arts Crafts Organizers and Storage, Stackable Containers for Home Office and School Supplies, 4 Pack",
           "price": "$25.49",
-          "rating": "4.6 out of 5 stars",
-          "reviews": "(1.1K)",
-          "sponsored": false
+          "rating": "4.6 out of 5 stars, rating details",
+          "reviews": "1,157 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
-          "asin": "B09TTP4RC9",
-          "title": "Amazon Basics Collapsible Fabric Storage Cube Bins Organizer with Handles for Organizing, Sturdy, Gray, 13 x 13 x 13 inch, 6-Pack",
-          "price": "$19.94",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(119.1K)",
-          "sponsored": false
+          "asin": "B00CQGTGZQ",
+          "rank": 28,
+          "title": "IRIS USA 6-Pack 13 Quart Storage Bins with Lids, Clear | Transparent design makes contents easy to find. Ideal for shoes, photos, documents, and small essentials. Nestable design.",
+          "price": "$29.74",
+          "rating": "4.1 out of 5 stars, rating details",
+          "reviews": "34,240 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0FCYF8FYD",
+          "rank": 29,
           "title": "SpaceWhisper 3 Pack 100L Clothes Storage, Foldable Thick Fabric Blanket Storage Bags, Containers for Organizing Bedroom, Closet, Clothing, Comforter,Closet Organization with Handle,Grey",
           "price": "$12.99",
-          "rating": "4.5 out of 5 stars",
-          "reviews": "(481)",
-          "sponsored": false
-        },
-        {
-          "asin": "B08BQBNXSQ",
-          "title": "ClearSpace Clear Plastic Storage Bins – Pantry Organizers & Storage Containers, Cabinet Organizer - Home Organization Must Haves for Kitchen, Laundry Room, Office, Closet, Garage & Freezer",
-          "price": "$33.99",
-          "rating": "4.8 out of 5 stars",
-          "reviews": "(13.5K)",
-          "sponsored": false
+          "rating": "4.5 out of 5 stars, rating details",
+          "reviews": "481 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B08KXKVT4K",
+          "rank": 30,
           "title": "Vtopmart 25 PCS Clear Plastic Drawer Organizers Set, 4-Size Versatile Bathroom and Vanity Drawer Organizer Trays, Storage Bins for Makeup, Bedroom, Kitchen Gadgets Utensils and Office | 4-Size Versati",
           "price": "$18.99",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(48.9K)",
-          "sponsored": false
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "48,913 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
-          "asin": "B0FXXG1LVK",
-          "title": "YFXCVSL 4 Tier Plastic Storage Bins with Lid 32QT, Stackable Storage Bins | Plastic Storage Bins with Wheels, Folding Storage Boxes, Organizers and Storage for Living Room,Office,Dorm",
-          "price": "$43.99",
-          "rating": "4.4 out of 5 stars",
-          "reviews": "(7.6K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B092ZDHJMN",
-          "title": "Fab totes 6 Pack Storage Bags for Clothes and Blanket, Foldable Closet Organizers and Storage with Zippers, Clear Window and Handles, Fabric Storage Bins for Sweater, Comforter, Bedding,Linen Sheets",
-          "price": "$15.71",
-          "rating": "4.4 out of 5 stars",
-          "reviews": "(38.5K)",
-          "sponsored": false
+          "asin": "B09TTP4RC9",
+          "rank": 31,
+          "title": "Amazon Basics Collapsible Fabric Storage Cube Bins Organizer with Handles for Organizing, Sturdy, Gray, 13 x 13 x 13 inch, 6-Pack",
+          "price": "$19.94",
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "119,122 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B083YSF4CT",
+          "rank": 32,
           "title": "Sterilite 12-Pack Ultra Latching Box, Storage Bins with Lids, Clear Plastic, 70 Quart - Heavy-Duty Organizing Containers for Closet, Bathroom, and Office",
           "price": "$199.48",
-          "rating": "4.5 out of 5 stars",
-          "reviews": "(12.9K)",
-          "sponsored": false
+          "rating": "4.5 out of 5 stars, rating details",
+          "reviews": "12,958 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B08BQBNXSQ",
+          "rank": 33,
+          "title": "ClearSpace Clear Plastic Storage Bins – Pantry Organizers & Storage Containers, Cabinet Organizer - Home Organization Must Haves for Kitchen, Laundry Room, Office, Closet, Garage & Freezer",
+          "price": "$33.99",
+          "rating": "4.8 out of 5 stars, rating details",
+          "reviews": "13,500 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0GL4S4BQM",
+          "rank": 34,
           "title": "Sterilite Latching Box with Lids for Home and Office, 64 Quart, 4-Pack | Heavy-Duty and Stackable Plastic Containers with Latches for Closet, Cabinet, Bedroom, Bathroom and Dorm Room Organization",
           "price": "$59.99",
-          "rating": "4.6 out of 5 stars",
-          "reviews": "(14.2K)",
-          "sponsored": false
+          "rating": "4.6 out of 5 stars, rating details",
+          "reviews": "14,266 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B0FXXG1LVK",
+          "rank": 35,
+          "title": "YFXCVSL 4 Tier Plastic Storage Bins with Lid 32QT, Stackable Storage Bins | Plastic Storage Bins with Wheels, Folding Storage Boxes, Organizers and Storage for Living Room,Office,Dorm",
+          "price": "$43.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "7,605 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B092ZDHJMN",
+          "rank": 36,
+          "title": "Fab totes 6 Pack Storage Bags for Clothes and Blanket, Foldable Closet Organizers and Storage with Zippers, Clear Window and Handles, Fabric Storage Bins for Sweater, Comforter, Bedding,Linen Sheets",
+          "price": "$15.71",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "38,513 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B000LDF0UG",
+          "rank": 37,
           "title": "Akro-Mils 30230 AkroBins Plastic Storage Bins, Space-Saving Stackable Bins for Garage, Pantry, Craft Organization, 10.5 \"L x 5.5 \"W x 5\"H, Blue, 12-Pack",
           "price": "$47.88",
-          "rating": "4.8 out of 5 stars",
-          "reviews": "(2.1K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0DFLQPY2R",
-          "title": "NUMIFUN 7Qt Clear Plastic Storage Bins with Lids,6 Pack | Stackable organizing totes with buckle latches & handles.Dust-proof clear design for home,office & pantry space saving",
-          "price": "$26.99",
-          "rating": "4.4 out of 5 stars",
-          "reviews": "(781)",
-          "sponsored": false
+          "rating": "4.8 out of 5 stars, rating details",
+          "reviews": "2,107 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0BMFKGVXD",
+          "rank": 38,
           "title": "Tiawudi 12 Pack Plastic Storage Bins, Multi-Use Organizer Bins, Pantry Organizer, Clear Storage Containers for Home, Kitchen, Office, Cabinet, Shelf and Fridge Organization",
           "price": "$27.99",
-          "rating": "4.9 out of 5 stars",
-          "reviews": "(1.7K)",
-          "sponsored": false
+          "rating": "4.9 out of 5 stars, rating details",
+          "reviews": "1,755 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
-          "asin": "B073V1SPHP",
-          "title": "Amazon Basics Collapsible Fabric Storage Bins Organizer with Handles, Sturdy, Foldable, 10.5\" x 10.5\" x 11\", Black, 6-Pack",
-          "price": "$17.84",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(119.1K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0FKVBW2B2",
-          "title": "IRIS USA 2-Pack 27 Gallon Storage Bins with Lids |Made in USA| Heavy Duty Plastic Tote Containers for Truckbed Tool Box Organization, Large - Black/Yellow",
-          "price": "$49.99",
-          "rating": "4.3 out of 5 stars",
-          "reviews": "(3.3K)",
-          "sponsored": false
+          "asin": "B0DFLQPY2R",
+          "rank": 39,
+          "title": "NUMIFUN 7Qt Clear Plastic Storage Bins with Lids,6 Pack | Stackable organizing totes with buckle latches & handles.Dust-proof clear design for home,office & pantry space saving",
+          "price": "$26.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "781 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B07PQ6GWQQ",
+          "rank": 40,
           "title": "Rubbermaid Cleverstore 71 Qt Clear Storage Bins with Lids, 4-Pack, Stackable, BPA-Free, Made in USA",
           "price": "$124.00",
-          "rating": "4.2 out of 5 stars",
-          "reviews": "(3.8K)",
-          "sponsored": false
+          "rating": "4.2 out of 5 stars, rating details",
+          "reviews": "3,828 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
-          "asin": "B082PJPQ1Y",
-          "title": "Rubbermaid Cleverstore 17 Qt Clear Storage Bins with Lids, 6-Pack, Stackable, BPA-Free, Made in USA",
-          "price": "$75.00",
-          "rating": "4.3 out of 5 stars",
-          "reviews": "(2.9K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0D1CFZ5L8",
-          "title": "Bagnizer Small Plastic Storage Bins with Bamboo Lids 5.2qt Stackable Box Basket Pantry Decorative Containers Cute with Labels for Organizing Desktop Closet Office Cream White of 6 packs 10*7.2*4.1\"",
-          "price": "$26.59",
-          "rating": "4.6 out of 5 stars",
-          "reviews": "(590)",
-          "sponsored": false
-        },
-        {
-          "asin": "B00KL7VPWO",
-          "title": "Sterilite 4-Pack 54 Quart Gasket Box, Home Storage Organizer Bins with Lids - Stackable Clear Plastic Containers for Bedroom, Bathroom, Garage, Basement, or Attic",
-          "price": "$69.99",
-          "rating": "4.3 out of 5 stars",
-          "reviews": "(5.9K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B0FBG5W85J",
-          "title": "Kmiectse Clear Storage Bins with Lids - 4 Tier 23qt Plastic Stackable Bins | Closet Organizers Box for Bedroom, Living Room, 23 QT Folding Box with Magnetic door",
-          "price": "$35.99",
-          "rating": "4.4 out of 5 stars",
-          "reviews": "(2.3K)",
-          "sponsored": false
-        },
-        {
-          "asin": "B085ZV98JM",
-          "title": "90L Large Storage Bags, 6 Pack Clothes Storage Bins Closet Organizers | Foldable Storage Containers, with Reinforced Handle, for Clothing, Blanket, Comforters, Bed Sheets, Pillows and Toys,Gray",
-          "price": "$17.99",
-          "rating": "4.4 out of 5 stars",
-          "reviews": "(65.8K)",
-          "sponsored": false
+          "asin": "B0FKVBW2B2",
+          "rank": 41,
+          "title": "IRIS USA 2-Pack 27 Gallon Storage Bins with Lids |Made in USA| Heavy Duty Plastic Tote Containers for Truckbed Tool Box Organization, Large - Black/Yellow",
+          "price": "$49.99",
+          "rating": "4.3 out of 5 stars, rating details",
+          "reviews": "3,396 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B0CXLK9PJ9",
+          "rank": 42,
           "title": "Vtopmart Stackable Storage Drawers Set of 5, Clear Plastic Organizer Bins for Baby Bottle, Beauty Supplies Storage, Ideal for Kichen Countertop, Vanity, Bathroom, Cabinet, Pantry Organization",
           "price": "$38.24",
-          "rating": "4.8 out of 5 stars",
-          "reviews": "(4.1K)",
-          "sponsored": false
+          "rating": "4.8 out of 5 stars, rating details",
+          "reviews": "4,170 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B082PJPQ1Y",
+          "rank": 43,
+          "title": "Rubbermaid Cleverstore 17 Qt Clear Storage Bins with Lids, 6-Pack, Stackable, BPA-Free, Made in USA",
+          "price": "$75.00",
+          "rating": "4.3 out of 5 stars, rating details",
+          "reviews": "2,953 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
           "asin": "B01HDPY7RG",
+          "rank": 44,
           "title": "Keter 150 Gallon Resin Large Deck Box Organization and Storage Box for Patio, Outdoor Cushions, Garden Tools, Brown | Brown, Resin, Large, Weatherproof, Lockable, Hydraulic Pistons, Easy Assembly, Org",
           "price": "$199.82",
-          "rating": "4.5 out of 5 stars",
-          "reviews": "(14.5K)",
-          "sponsored": false
+          "rating": "4.5 out of 5 stars, rating details",
+          "reviews": "14,582 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         },
         {
-          "asin": "B0D92YJ4VZ",
-          "title": "Sterilite Industrial Storage Tote with Lids for Garage, 27 Gallon, 12-Pack | Heavy-Duty and Stackable Utility Box Containers for Home, Office, and Basement Organization, Black/Yellow",
-          "price": "$184.99",
-          "rating": "4.7 out of 5 stars",
-          "reviews": "(239)",
-          "sponsored": false
+          "asin": "B00KL7VPWO",
+          "rank": 45,
+          "title": "Sterilite 4-Pack 54 Quart Gasket Box, Home Storage Organizer Bins with Lids - Stackable Clear Plastic Containers for Bedroom, Bathroom, Garage, Basement, or Attic",
+          "price": "$69.99",
+          "rating": "4.3 out of 5 stars, rating details",
+          "reviews": "5,958 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B085ZV98JM",
+          "rank": 46,
+          "title": "90L Large Storage Bags, 6 Pack Clothes Storage Bins Closet Organizers | Foldable Storage Containers, with Reinforced Handle, for Clothing, Blanket, Comforters, Bed Sheets, Pillows and Toys,Gray",
+          "price": "$17.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "65,837 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B073V1SPHP",
+          "rank": 47,
+          "title": "Amazon Basics Collapsible Fabric Storage Bins Organizer with Handles, Sturdy, Foldable, 10.5\" x 10.5\" x 11\", Black, 6-Pack",
+          "price": "$17.84",
+          "rating": "4.7 out of 5 stars, rating details",
+          "reviews": "119,122 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
+        },
+        {
+          "asin": "B0FBG5W85J",
+          "rank": 48,
+          "title": "Kmiectse Clear Storage Bins with Lids - 4 Tier 23qt Plastic Stackable Bins | Closet Organizers Box for Bedroom, Living Room, 23 QT Folding Box with Magnetic door",
+          "price": "$35.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "2,382 ratings",
+          "sponsored": false,
+          "seller_sprite_icon": true
         }
       ],
       "seller_sprite": {
-        "has_panel": false,
-        "note": "SellerSprite injects DOM only in live page; on-disk cache has native Amazon fields only"
+        "total_in_page": 3,
+        "asins_with_icon": 48,
+        "note": "srp page: SellerSprite injects click-to-expand icons only. LQS/月销量/变体 require per-card click or detail-page visit."
       },
-      "fetched_at": "2026-07-25T10:40:40",
+      "fetched_at": "2026-07-25T11:23:42",
       "bucket": "Test",
-      "edge_history_url": "https://www.amazon.com/s?k=storage+bins (visited 10:21:56)",
       "stats": {
         "with_title": 48,
         "with_price": 48,
         "with_rating": 46,
         "with_reviews": 46,
-        "sponsored": 0
+        "sponsored": 0,
+        "with_ss_icon": 48
       }
     }
   }
