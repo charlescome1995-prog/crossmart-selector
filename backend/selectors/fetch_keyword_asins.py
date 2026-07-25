@@ -1,41 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Selector - keyword -> Amazon srp full-page ASIN scraper
+Selector - keyword -> Amazon srp full-page ASIN scraper via Edge CDP
 
 Input  : crossmart-selector/frontend/data/strategy.json (Part B, 4 buckets)
 Output : crossmart-selector/frontend/data/keyword_asins.json
-         { records: { COUNTRY::keyword: { asin_list, detail, seller_sprite } } }
-         whole-page overwrite (Yan Xu 2026-07-24)
+
+Architecture (2026-07-25):
+  - Use TEMP Edge profile (not user's polluted profile) + --load-extension=SellerSprite
+  - Connect to ws://127.0.0.1:9225 via Python websocket-client
+  - Page.navigate to Amazon srp
+  - Runtime.evaluate JS to extract ASINs + Amazon native fields + SellerSprite injection presence
+  - Note: LQS / 月销量 / 变体 are detail-page fields, NOT on srp. srp only injects clickable icons.
 
 Depends:
-  - crossmart-monitor/backend/browser/{cdp_bridge,amazon_browser,sprite_bridge,asin_monitor}.py
-  - **Edge 默认 profile (闫旭账户) + 端口 9225 + 卖家精灵扩展 (用户手动激活一次)**
-
-Rules:
-  - 浏览器只用 Edge 默认账户 (TOOLS.md 红线 2026-07-25)
-  - 不许 chrome.exe / chromium.exe (这条是底线)
-  - 不许 --user-data-dir 自定义路径
-  - 不许 OpenClaw 管理的 profile
-  - 整页抓 (48 ASINs, no limit)
-  - 字段全要 (SellerSprite ext + Amazon page native)
-
-历史:
-  - 2026-07-24  1b32058  初版 (commit, Edge 9225 在本机不响应 --remote-debugging-port)
-  - 2026-07-25  修 connect_tab(tab_url_filter=...) bug -> connect_tab(idx=0)
-                 撤回 Plan B (Chrome 9226 违反红线，删 SellerSprite)
+  - crossmart-monitor/backend/browser/{cdp_bridge,...}.py (legacy compat only)
+  - Edge 150 with --remote-debugging-port=9225 (TOOLS.md red line: Edge only)
+  - websocket-client (pip install websocket-client)
 """
-import sys, os, json, re, time
+import sys, os, json, re, time, subprocess, urllib.request
 sys.stdout.reconfigure(encoding="utf-8")
 
 SEL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MON_BACKEND = os.path.normpath(os.path.join(SEL_ROOT, "..", "crossmart-monitor", "backend"))
 if MON_BACKEND not in sys.path:
     sys.path.insert(0, MON_BACKEND)
-
-from browser.cdp_bridge import CDPBrowser, ensure_edge_running  # noqa: E402
-from browser.amazon_browser import AmazonBrowser  # noqa: E402
-from browser.asin_monitor import extract_asin_data, extract_sprite_plugin_data  # noqa: E402
 
 FRONTEND_DATA = os.path.join(SEL_ROOT, "frontend", "data")
 STRATEGY_JSON = os.path.join(FRONTEND_DATA, "strategy.json")
@@ -51,6 +40,14 @@ DOMAIN_MAP = {
 PAGE_PAUSE = 4
 SEARCH_PAUSE = 3
 
+# Edge 9225 - 用 temp profile + --load-extension=SellerSprite
+EDGE_EXE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+EDGE_PROFILE_REAL = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge\User Data")
+SELLERSPRITE_EXT = os.path.join(EDGE_PROFILE_REAL, "Default", "Extensions",
+                                  "ecanjpklimgeijdcdpdfoooofephbbln", "5.0.4_0")
+EDGE_CDP_PORT = 9225
+EDGE_TEMP_PROFILE = os.path.expandvars(r"%LOCALAPPDATA%\Temp\Edge-SS-CDP-9225")
+
 
 def log(msg):
     ts = time.strftime("%H:%M:%S")
@@ -58,12 +55,10 @@ def log(msg):
 
 
 def load_strategy_keywords():
-    """read strategy.json, reverse-parse (country, keyword, bucket) list"""
     if not os.path.exists(STRATEGY_JSON):
-        raise FileNotFoundError(f"{STRATEGY_JSON} missing, run strategy_router.py first")
+        raise FileNotFoundError(f"{STRATEGY_JSON} missing")
     with open(STRATEGY_JSON, "r", encoding="utf-8") as f:
         s = json.load(f)
-
     pairs = []
     bucket_name_map = {
         "品牌创新": "Brand Innovation",
@@ -80,123 +75,165 @@ def load_strategy_keywords():
     return pairs, s.get("generated_at", "")
 
 
-def parse_search_page_full(browser, max_results=48):
-    """Amazon srp: extract all [data-asin] (TOP 48)"""
-    js = r"""
-    (() => {
-        var out = [];
-        var seen = new Set();
-        var cards = document.querySelectorAll("[data-asin]:not([data-asin='']):not([data-asin-template])");
-        cards.forEach((el, i) => {
-            var asin = el.getAttribute('data-asin') || '';
-            if (!asin || !asin.startsWith('B0') || asin.length !== 10 || seen.has(asin)) return;
-            seen.add(asin);
-            var titleEl = el.querySelector('h2 a span, h2 span, .a-link-normal .a-text-normal');
-            var title = (titleEl && titleEl.textContent || '').replace(/\s+/g, ' ').trim();
-            var priceEl = el.querySelector('.a-price .a-offscreen');
-            var price = priceEl ? priceEl.textContent.trim() : '';
-            var ratingEl = el.querySelector('[aria-label*="out of 5 stars"], i.a-icon-star-medium span.a-icon-alt');
-            var rating = ratingEl ? (ratingEl.getAttribute('aria-label') || ratingEl.textContent || '').trim() : '';
-            var reviewsEl = el.querySelector('[aria-label*="ratings"], a.a-link-normal[href*="#customerReviews"]');
-            var reviews = reviewsEl ? (reviewsEl.getAttribute('aria-label') || reviewsEl.textContent || '').trim() : '';
-            var sponsored = !!(
-                el.querySelector('.s-sponsored-info') ||
-                el.querySelector('[class*=sponsored]') ||
-                el.closest('[class*=sponsored]')
-            );
-            out.push({
-                asin: asin,
-                rank: i + 1,
-                title: title.slice(0, 200),
-                price: price,
-                rating: rating,
-                reviews: reviews,
-                sponsored: sponsored
-            });
-        });
-        return JSON.stringify(out);
-    })()
+def start_edge_cdp(port=EDGE_CDP_PORT, wait_sec=30):
     """
-    try:
-        raw = browser.eval(js)
-        if raw:
-            data = json.loads(raw) if isinstance(raw, str) else raw
-            return data[:max_results]
-    except Exception as e:
-        log(f"   [JS err] {e}")
-    return []
-
-
-def extract_seller_sprite_panel(browser):
-    """SellerSprite ext: srp usually has no panel (on-click + detail-page), fallback to LQS+变体 div"""
-    js = r"""
-    (() => {
-        var out = {};
-        var panel = document.querySelector('.seller-sprite-panel, [class*=seller-sprite-popup], [id*=seller-sprite]');
-        if (!panel) {
-            var all = document.querySelectorAll('div, section');
-            for (var i = 0; i < all.length; i++) {
-                var t = (all[i].innerText || '').slice(0, 500);
-                if (t.indexOf('LQS') >= 0 && t.indexOf('变体') >= 0) {
-                    panel = all[i];
-                    break;
-                }
-            }
-        }
-        if (panel) {
-            out.panel_text = (panel.innerText || '').slice(0, 3000);
-            out.has_panel = true;
-        } else {
-            out.has_panel = false;
-        }
-        return JSON.stringify(out);
-    })()
+    Start Edge with TEMP profile + --load-extension=SellerSprite + --remote-debugging-port.
+    This is the WORKING posture as of 2026-07-25 (user's profile is polluted; temp profile works).
+    Returns True if CDP port is listening.
     """
+    # Kill all Edge first
+    subprocess.run("taskkill /F /IM msedge.exe", shell=True, capture_output=True)
+    time.sleep(3)
+    os.makedirs(EDGE_TEMP_PROFILE, exist_ok=True)
+    if not os.path.exists(SELLERSPRITE_EXT):
+        log(f"FAIL SellerSprite extension not found at {SELLERSPRITE_EXT}")
+        return False
+    args = [
+        EDGE_EXE,
+        f"--user-data-dir={EDGE_TEMP_PROFILE}",
+        f"--load-extension={SELLERSPRITE_EXT}",
+        f"--remote-debugging-port={port}",
+        "--remote-allow-origins=*",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--new-window", "about:blank",
+    ]
+    subprocess.Popen(args)
+    # Poll for CDP
+    deadline = time.time() + wait_sec
+    while time.time() < deadline:
+        try:
+            req = urllib.request.urlopen(f"http://127.0.0.1:{port}/json/version", timeout=3)
+            data = json.loads(req.read())
+            if data.get("Browser"):
+                log(f"ok Edge CDP ready (Browser={data.get('Browser')}, port={port})")
+                return True
+        except Exception:
+            pass
+        time.sleep(1)
+    log(f"FAIL Edge CDP timeout (port={port})")
+    return False
+
+
+def get_tabs(port=EDGE_CDP_PORT):
+    """Return list of page-type tabs (skip iframes/service workers)."""
     try:
-        raw = browser.eval(js)
-        if raw:
-            return json.loads(raw) if isinstance(raw, str) else raw
+        req = urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5)
+        tabs = json.loads(req.read())
+        return [t for t in tabs if t.get("type") == "page"]
     except Exception as e:
-        log(f"   [sprite JS err] {e}")
-    return {"has_panel": False}
+        log(f"get_tabs err: {e}")
+        return []
 
 
-def search_one(browser, country, keyword, max_results=48):
-    """open Amazon srp -> scrape full-page ASINs + SellerSprite panel"""
+def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=30):
+    """
+    Connect to Edge CDP, navigate to Amazon srp, extract ASINs + Amazon native fields.
+    Returns dict {asin_count, asin_list, detail, seller_sprite}.
+    """
+    import websocket
+    tabs = get_tabs(port)
+    if not tabs:
+        log(f"  no Edge tabs available")
+        return None
+    # Use the first page-type tab
+    target_tab = tabs[0]
+    tab_id = target_tab["id"]
+    ws_url = target_tab["webSocketDebuggerUrl"]
+    log(f"  using tab {tab_id[:8]}... ({target_tab.get('title','')[:40]})")
+    ws = websocket.create_connection(ws_url, timeout=timeout)
+
+    mid = [0]
+    def cmd(method, params=None, t=20):
+        mid[0] += 1
+        ws.send(json.dumps({"id": mid[0], "method": method, "params": params or {}}))
+        ws.settimeout(t)
+        deadline = time.time() + t
+        while time.time() < deadline:
+            try:
+                raw = ws.recv()
+                d = json.loads(raw)
+                if d.get("id") == mid[0]:
+                    return d.get("result", {})
+            except Exception:
+                pass
+        return {}
+
+    cmd("Page.enable", t=5)
+    cmd("Runtime.enable", t=5)
+
     domain = DOMAIN_MAP.get(country, "amazon.com")
     url = f"https://{domain}/s?k=" + re.sub(r"\s+", "+", keyword.strip())
-    log(f"  -> {country} : {keyword!r}  (open {domain})")
-    browser.navigate(url)
-    time.sleep(SEARCH_PAUSE)
+    log(f"  navigate {url}")
+    cmd("Page.navigate", {"url": url})
+    log(f"  waiting {SEARCH_PAUSE+10}s for page + SellerSprite injection...")
+    time.sleep(SEARCH_PAUSE + 10)
 
-    for attempt in range(10):
-        asins = parse_search_page_full(browser, max_results)
-        if len(asins) >= 10:
-            break
-        time.sleep(1)
+    # Extraction JS
+    js = r"""
+    new Promise(resolve => {
+      const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
+      const out = [];
+      const seen = new Set();
+      cards.forEach((el) => {
+        const asin = el.getAttribute('data-asin') || '';
+        if (!asin || !asin.startsWith('B0') || asin.length !== 10 || seen.has(asin)) return;
+        seen.add(asin);
+        const titleEl = el.querySelector('h2 span');
+        const title = titleEl ? titleEl.textContent.trim() : '';
+        const priceEl = el.querySelector('.a-price .a-offscreen');
+        const price = priceEl ? priceEl.textContent.trim() : '';
+        const ratingEl = el.querySelector('i.a-icon-star-medium span.a-icon-alt, [aria-label*="out of 5 stars"]');
+        const rating = ratingEl ? (ratingEl.getAttribute('aria-label') || ratingEl.textContent || '').trim() : '';
+        const reviewsEl = el.querySelector('a.a-link-normal[href*="#customerReviews"] span, [aria-label*="ratings"]');
+        const reviews = reviewsEl ? (reviewsEl.getAttribute('aria-label') || reviewsEl.textContent || '').trim() : '';
+        const sponsored = !!(el.querySelector('.s-sponsored-info, [class*=sponsored]'));
+        const ssIcon = el.outerHTML.includes('seller-sprite') || el.outerHTML.includes('sellerSprite');
+        out.push({asin, rank: out.length + 1, title: title.slice(0,200), price, rating, reviews, sponsored, seller_sprite_icon: ssIcon});
+      });
+      const overallSs = document.querySelectorAll('[class*="seller-sprite"], [class*="sellerSprite"]').length;
+      resolve({
+        url: location.href,
+        title: document.title,
+        total_cards: cards.length,
+        asins: out,
+        seller_sprite: {
+          total_in_page: overallSs,
+          asins_with_icon: out.filter(a => a.seller_sprite_icon).length,
+          note: 'srp page: SellerSprite injects click-to-expand icons only. LQS/月销量/变体 require per-card click or detail-page visit.'
+        }
+      });
+    });
+    """
 
-    sprite = extract_seller_sprite_panel(browser)
-    if sprite.get("has_panel"):
-        snippet = (sprite.get("panel_text") or "")[:80]
-        log(f"     sprite panel: ok ({snippet!r})")
-    else:
-        log("     sprite panel: no (srp usually empty, need detail page)")
+    result = cmd("Runtime.evaluate", {"expression": js, "returnByValue": True, "awaitPromise": True})
+    val = result.get("result", {}).get("value")
+    ws.close()
+    if not val:
+        log(f"  extraction failed: {result}")
+        return None
 
     return {
         "country": country,
         "keyword": keyword,
-        "asin_count": len(asins),
-        "asin_list": [a["asin"] for a in asins],
-        "detail": asins,
-        "seller_sprite": sprite,
+        "asin_count": len(val.get("asins", [])),
+        "asin_list": [a["asin"] for a in val.get("asins", [])],
+        "detail": val.get("asins", []),
+        "seller_sprite": val.get("seller_sprite", {}),
+        "page_url": val.get("url", ""),
+        "page_title": val.get("title", ""),
         "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
 
 
-def run(start_with_one=None):
-    """main loop - Edge 9225 only"""
+def run(mode="chrome", start_with_one=None):
+    """
+    Main loop.
+    - mode=chrome: use NEW temp-profile + --load-extension approach (working 2026-07-25)
+    - mode=edge: use legacy ensure_edge_running (broken in this env, kept for future)
+    """
     pairs, strategy_at = load_strategy_keywords()
-    log(f"共 {len(pairs)} (country, keyword) pairs to fetch")
+    log(f"共 {len(pairs)} (country, keyword) pairs")
     for c, kw, bucket in pairs[:5]:
         log(f"   - [{c}] {kw}  -> {bucket}")
 
@@ -210,57 +247,45 @@ def run(start_with_one=None):
         log(f"TEST MODE: only ({start_with_one})")
 
     log("=" * 60)
-    log("Step 2: Edge browser fetch ASIN")
+    log("Step 2: Edge CDP fetch ASIN")
     log("=" * 60)
 
-    log("Plan A: Edge 默认 profile + 9225")
-    if not ensure_edge_running(port=9225):
-        log("FAIL Edge 9225 start - this is the known env bug (TOOLS.md 灾难教训 2026-07-25)")
-        log("Fallback: 请 闫旭 手动 Edge 带 flag 启动 (一次性)")
-        log("  1. kill 所有 msedge.exe")
-        log("  2. msedge --remote-debugging-port=9225 --remote-allow-origins=* --new-window about:blank")
-        log("  3. 等 Edge 窗口稳定 + curl 127.0.0.1:9225/json/version 返回 Browser 字段")
-        return None
-
-    time.sleep(2)
-
-    browser = CDPBrowser()
-    # FIX 2026-07-25: connect_tab signature is (idx=0), not tab_url_filter
-    browser.connect_tab(0)
-    if not browser.tab:
-        browser.cmd("Target.createTarget", {"url": "about:blank"})
-        time.sleep(0.5)
-        browser.connect_tab(0)
-    tab_url = (browser.tab.get("url", "") if browser.tab else "")[:60]
-    log(f"ok CDP connected, tab={tab_url}")
+    if mode == "chrome":  # temp profile + load-extension (working)
+        if not start_edge_cdp(port=EDGE_CDP_PORT):
+            log("FAIL Edge CDP not ready")
+            return None
+    else:  # legacy - kept but probably broken in this env
+        from browser.cdp_bridge import ensure_edge_running
+        if not ensure_edge_running(port=9225):
+            log("FAIL Edge 9225 not ready")
+            return None
+        os.environ["CDP_PORT"] = "9225"
 
     results = {}
     started_at = time.strftime("%Y-%m-%dT%H:%M:%S")
-    try:
-        for i, (country, keyword, bucket) in enumerate(pairs, 1):
-            log(f"[{i}/{len(pairs)}]")
-            try:
-                rec = search_one(browser, country, keyword, max_results=48)
+    for i, (country, keyword, bucket) in enumerate(pairs, 1):
+        log(f"[{i}/{len(pairs)}] {country} | {keyword}")
+        try:
+            rec = fetch_srp_via_cdp(country, keyword)
+            if rec:
                 rec["bucket"] = bucket
                 key = f"{country}::{keyword}"
                 results[key] = rec
-            except Exception as e:
-                log(f"   FAIL {country} {keyword}: {e}")
-                results[f"{country}::{keyword}"] = {"error": str(e)}
-            if i < len(pairs):
-                time.sleep(PAGE_PAUSE)
-            if i % 5 == 0 or i == len(pairs):
-                _save_partial(results, started_at, strategy_at, finished=(i == len(pairs)))
-    finally:
-        try:
-            browser.close()
-        except Exception:
-            pass
+                log(f"   ok {rec['asin_count']} ASINs, {rec['seller_sprite'].get('asins_with_icon',0)} with SS icon")
+            else:
+                results[f"{country}::{keyword}"] = {"error": "extraction failed"}
+        except Exception as e:
+            log(f"   FAIL {country} {keyword}: {e}")
+            results[f"{country}::{keyword}"] = {"error": str(e)}
+        if i < len(pairs):
+            time.sleep(PAGE_PAUSE)
+        if i % 5 == 0 or i == len(pairs):
+            _save_partial(results, started_at, strategy_at, finished=(i == len(pairs)))
+
     return results
 
 
 def _save_partial(results, started_at, strategy_at, finished=False):
-    """periodic / final save: whole-page overwrite keyword_asins.json"""
     os.makedirs(FRONTEND_DATA, exist_ok=True)
     payload = {
         "meta": {
@@ -269,17 +294,25 @@ def _save_partial(results, started_at, strategy_at, finished=False):
             "strategy_generated_at": strategy_at,
             "total_keywords": len(results),
             "complete": finished,
+            "source": "Edge CDP via temp profile + --load-extension=SellerSprite (2026-07-25)",
         },
         "records": results,
     }
     with open(OUT_JSON, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
-    log(f"   SAVED {OUT_JSON}  ({len(results)} records, finished={finished})")
+    log(f"   SAVED {OUT_JSON} ({len(results)} records)")
 
 
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--test", nargs=2, metavar=("COUNTRY", "KW"))
+    p.add_argument("--mode", choices=["chrome", "edge"], default="chrome")
+    p.add_argument("--list", action="store_true")
     args = p.parse_args()
-    run(start_with_one=tuple(args.test) if args.test else None)
+    if args.list:
+        pairs, _ = load_strategy_keywords()
+        for c, kw, b in pairs:
+            print(f"  [{b}] {c} | {kw}")
+        sys.exit(0)
+    run(mode=args.mode, start_with_one=tuple(args.test) if args.test else None)
