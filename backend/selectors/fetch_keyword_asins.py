@@ -24,7 +24,7 @@ EDGE_PROFILE_REAL = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge\User Data
 SELLERSPRITE_EXT = os.path.join(EDGE_PROFILE_REAL, "Default", "Extensions",
                                   "ecanjpklimgeijdcdpdfoooofephbbln", "5.0.4_0")
 EDGE_CDP_PORT = 9225
-EDGE_TEMP_PROFILE = os.path.expandvars(r"%LOCALAPPDATA%\Temp\Edge-CDP-9225")
+EDGE_TEMP_PROFILE = r"C:\Users\OPENPC\AppData\Local\Microsoft\Edge\User Data-CDP-9225"
 
 
 def log(msg):
