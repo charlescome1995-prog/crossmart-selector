@@ -91,53 +91,103 @@ def get_tabs(port=EDGE_CDP_PORT):
 
 EXTRACT_JS = r"""
 (() => {
-  const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
-  const results = [];
-  const seen = new Set();
-  for (const card of cards) {
-    const asin = card.getAttribute('data-asin') || '';
-    if (!asin || !asin.startsWith('B0') || asin.length !== 10 || seen.has(asin)) continue;
-    seen.add(asin);
-    const titleEl = card.querySelector('h2 span');
-    const title = titleEl ? titleEl.textContent.trim() : '';
-    const priceEl = card.querySelector('.a-price .a-offscreen');
-    const price = priceEl ? priceEl.textContent.trim() : '';
-    const ratingEl = card.querySelector('i.a-icon-star-medium span.a-icon-alt, [aria-label*="out of 5 stars"]');
-    const rating = ratingEl ? (ratingEl.getAttribute('aria-label') || ratingEl.textContent || '').trim() : '';
-    const reviewsEl = card.querySelector('a.a-link-normal[href*="#customerReviews"] span, [aria-label*="ratings"]');
-    const reviews = reviewsEl ? (reviewsEl.getAttribute('aria-label') || reviewsEl.textContent || '').trim() : '';
-    const sponsored = !!(card.querySelector('.s-sponsored-info, [class*=sponsored]'));
-    const ssContainer = card.querySelector('[name^="seller-sprite-extension-quick-view-"]');
-    const ss = {has_ss: !!ssContainer, raw_text: '', brand: '', seller: '', fulfillment: '', seller_count: '', natural_position: '', bsr_main: '', bsr_sub: '', monthly_sales_parent: '', monthly_sales_child: '', variants: '', ss_rating: ''};
-    if (ssContainer) {
-      const fullText = ssContainer.innerText || '';
-      ss.raw_text = fullText.slice(0, 2000);
-      const mBrand = fullText.match(/\u54c1\u724c:\s*([^\n]+)/);
-      if (mBrand) ss.brand = mBrand[1].trim();
-      const mSeller = fullText.match(/\u5356\u5bb6:([^\n]+)/);
-      if (mSeller) ss.seller = mSeller[1].trim();
-      const mFulfillment = fullText.match(/\u914d\u9001:\s*([^\n]+)/);
-      if (mFulfillment) ss.fulfillment = mFulfillment[1].trim();
-      const mSellerCount = fullText.match(/\u5356\u5bb6\u6570:\s*(\d+)/);
-      if (mSellerCount) ss.seller_count = mSellerCount[1];
-      const mNatPos = fullText.match(/\u81ea\u7136\u4f4d[:\uff1a]?\s*([^\n]+)/);
-      if (mNatPos) ss.natural_position = mNatPos[1].trim();
-      const bsrMatches = [...fullText.matchAll(/#([\d,]+)\s+in\s+([^\n]+)/g)];
-      if (bsrMatches[0]) ss.bsr_main = bsrMatches[0][1] + ' in ' + bsrMatches[0][2];
-      if (bsrMatches[1]) ss.bsr_sub = bsrMatches[1][1] + ' in ' + bsrMatches[1][2];
-      const mParentSales = fullText.match(/\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u7236\u4f53\):\s*([^*\n]+)/);
-      if (mParentSales) ss.monthly_sales_parent = mParentSales[1].trim();
-      const mChildSales = fullText.match(/\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u5b50\u4f53\):\s*([^*\n]+)/);
-      if (mChildSales) ss.monthly_sales_child = mChildSales[1].trim();
-      const mVariants = fullText.match(/\u53d8\u4f53\u6570:\s*(\d+)/);
-      if (mVariants) ss.variants = mVariants[1];
-      const mRating = fullText.match(/\u8bc4\u5206\((.*?)\)/);
-      if (mRating) ss.ss_rating = mRating[1];
+  return new Promise(async (resolve) => {
+    // Wait for cards + SS injection (max 30s)
+    let waited = 0;
+    while (waited < 30000) {
+      const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
+      const ssCards = document.querySelectorAll('[name^="seller-sprite-extension-quick-view-"]');
+      if (cards.length >= 40 && ssCards.length >= 40) break;
+      await new Promise(r => setTimeout(r, 500));
+      waited += 500;
     }
-    results.push({asin, title: title.slice(0,200), price, rating, reviews, sponsored, seller_sprite: ss});
-  }
-  return results;
-})()
+    // Scroll to trigger lazy-load
+    window.scrollTo(0, 0);
+    for (let y = 0; y < 6000; y += 300) {
+      window.scrollTo(0, y);
+      await new Promise(r => setTimeout(r, 200));
+    }
+    window.scrollTo(0, 0);
+    // Wait for SS full text (>= 400 chars means full data loaded)
+    waited = 0;
+    while (waited < 20000) {
+      const first = document.querySelector('[name^="seller-sprite-extension-quick-view-"]');
+      if (first && first.innerText.length > 400) break;
+      await new Promise(r => setTimeout(r, 500));
+      waited += 500;
+    }
+    // Extract all 48 ASINs + SS fields
+    const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
+    const results = [];
+    for (const card of cards) {
+      const asin = card.getAttribute('data-asin') || '';
+      if (!asin || !asin.startsWith('B0') || asin.length !== 10) continue;
+      const titleEl = card.querySelector('h2 span');
+      const title = titleEl ? titleEl.textContent.trim() : '';
+      const priceEl = card.querySelector('.a-price .a-offscreen');
+      const price = priceEl ? priceEl.textContent.trim() : '';
+      const ratingEl = card.querySelector('i.a-icon-star-medium span.a-icon-alt, [aria-label*="out of 5 stars"]');
+      const rating = ratingEl ? (ratingEl.getAttribute('aria-label') || ratingEl.textContent || '').trim() : '';
+      const reviewsEl = card.querySelector('a.a-link-normal[href*="#customerReviews"] span, [aria-label*="ratings"]');
+      const reviews = reviewsEl ? (reviewsEl.getAttribute('aria-label') || reviewsEl.textContent || '').trim() : '';
+      const sponsored = !!(card.querySelector('.s-sponsored-info, [class*=sponsored]'));
+      const ssContainer = card.querySelector('[name^="seller-sprite-extension-quick-view-"]');
+      const ss = {has_ss: !!ssContainer, brand:'', seller:'', fulfillment:'', seller_count:'', natural_position:'', bsr_main:'', bsr_sub:'', monthly_sales_parent:'', monthly_sales_child:'', revenue:'', fba_fee:'', margin:'', variants:'', ss_price:'', ss_rating:'', ss_review_count:'', delivery_days:'', prime_days:'', launch_date:'', days_listed:'', all_traffic_words:'', organic_keywords:'', ad_keywords:'', suggest_keywords:''};
+      if (ssContainer) {
+        const t = ssContainer.innerText || '';
+        const mBrand = t.match(/\u54c1\u724c:\s*([^\n]+)/);
+        if (mBrand) ss.brand = mBrand[1].trim();
+        const mSeller = t.match(/\u5356\u5bb6:([^\n]+)/);
+        if (mSeller) ss.seller = mSeller[1].trim();
+        const mFul = t.match(/\u914d\u9001:\s*([^\n]+)/);
+        if (mFul) ss.fulfillment = mFul[1].trim();
+        const mSC = t.match(/\u5356\u5bb6\u6570:\s*([^\n]+)/);
+        if (mSC) ss.seller_count = mSC[1].trim();
+        const mNat = t.match(/\u81ea\u7136\u4f4d[:\uff1a]\s*([^\n]+)/);
+        if (mNat) ss.natural_position = mNat[1].trim();
+        const bsrs = [...t.matchAll(/#([\d,]+)\s+in\s+([^\n]+)/g)];
+        if (bsrs[0]) ss.bsr_main = bsrs[0][1] + ' in ' + bsrs[0][2];
+        if (bsrs[1]) ss.bsr_sub = bsrs[1][1] + ' in ' + bsrs[1][2];
+        const mP = t.match(/\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u7236\u4f53\):\s*([^*\n]+)/);
+        if (mP) ss.monthly_sales_parent = mP[1].trim();
+        const mC = t.match(/\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u5b50\u4f53\):\s*([^*\n]+)/);
+        if (mC) ss.monthly_sales_child = mC[1].trim();
+        const mRev = t.match(/\u9500\u552e\u989d:\s*([^\n]+)/);
+        if (mRev) ss.revenue = mRev[1].trim();
+        const mFee = t.match(/FBA\u8d39\u7528:\s*([^\n]+)/);
+        if (mFee) ss.fba_fee = mFee[1].trim();
+        const mMar = t.match(/\u6bdb\u5229\u7387:\s*([^\n]+)/);
+        if (mMar) ss.margin = mMar[1].trim();
+        const mVar = t.match(/\u53d8\u4f53\u6570:\s*(\d+)/);
+        if (mVar) ss.variants = mVar[1];
+        const mSP = t.match(/\u4ef7\u683c:\s*\$?\s*([\d.,]+)/);
+        if (mSP) ss.ss_price = '$' + mSP[1].trim();
+        const mR = t.match(/\u8bc4\u5206\(([^\n]+)\)/);
+        if (mR) {
+          const rm = mR[1].match(/([\d.]+)\(([0-9,]+)\)/);
+          if (rm) { ss.ss_rating = rm[1]; ss.ss_review_count = rm[2]; }
+          else ss.ss_rating = mR[1];
+        }
+        const mDD = t.match(/\u914d\u9001\u65f6\u957f:\s*(\d+\s*\u5929)/);
+        if (mDD) ss.delivery_days = mDD[1];
+        const mPD = t.match(/Prime\u914d\u9001\u65f6\u957f:\s*(\d+\s*\u5929)/);
+        if (mPD) ss.prime_days = mPD[1];
+        const mLD = t.match(/\u4e0a\u67b6\u65f6\u95f4:\s*(\d{4}-\d{2}-\d{2})\s*\((\d+\s*\u5929)\)/);
+        if (mLD) { ss.launch_date = mLD[1]; ss.days_listed = mLD[2]; }
+        const mAll = t.match(/\u5168\u90e8\u6d41\u91cf\u8bcd:\s*(\d+)/);
+        if (mAll) ss.all_traffic_words = mAll[1];
+        const mOrg = t.match(/\u81ea\u7136\u641c\u7d22\u8bcd:\s*(\d+)/);
+        if (mOrg) ss.organic_keywords = mOrg[1];
+        const mAd = t.match(/\u5e7f\u544a\u6d41\u91cf\u8bcd:\s*(\d+)/);
+        if (mAd) ss.ad_keywords = mAd[1];
+        const mSug = t.match(/\u641c\u7d22\u63a8\u8350\u8bcd:\s*(\d+)/);
+        if (mSug) ss.suggest_keywords = mSug[1];
+      }
+      results.push({asin, title: title.slice(0,200), price, rating, reviews, sponsored, seller_sprite: ss});
+    }
+    resolve(results);
+  });
+})
 """
 
 
@@ -206,8 +256,21 @@ def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60):
             "ss_bsr_sub": ss.get("bsr_sub", ""),
             "ss_monthly_sales_parent": ss.get("monthly_sales_parent", ""),
             "ss_monthly_sales_child": ss.get("monthly_sales_child", ""),
+            "ss_revenue": ss.get("revenue", ""),
+            "ss_fba_fee": ss.get("fba_fee", ""),
+            "ss_margin": ss.get("margin", ""),
             "ss_variants": ss.get("variants", ""),
+            "ss_price": ss.get("ss_price", ""),
             "ss_rating": ss.get("ss_rating", ""),
+            "ss_review_count": ss.get("ss_review_count", ""),
+            "ss_delivery_days": ss.get("delivery_days", ""),
+            "ss_prime_days": ss.get("prime_days", ""),
+            "ss_launch_date": ss.get("launch_date", ""),
+            "ss_days_listed": ss.get("days_listed", ""),
+            "ss_all_traffic_words": ss.get("all_traffic_words", ""),
+            "ss_organic_keywords": ss.get("organic_keywords", ""),
+            "ss_ad_keywords": ss.get("ad_keywords", ""),
+            "ss_suggest_keywords": ss.get("suggest_keywords", ""),
             "ss_has_ss": ss.get("has_ss", False),
         }
         detail.append(flat)
