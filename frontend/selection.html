@@ -422,5 +422,152 @@ document.getElementById('searchInput').addEventListener('input', applySearch);
 load();
 </script>
 
+
+<!-- ===== Step 2: 关键词ASIN抓取结果 (from keyword_asins.json) ===== -->
+<div id="asinsPanel" class="container" style="padding-top:0;max-width:100vw">
+  <div class="header-card" style="margin-top:0">
+    <div class="action-row">
+      <div>
+        <span class="title-tag">📦 Step 2 · 关键词→ASIN 抓取结果</span>
+        <span class="title-hint" id="asinsMeta">加载中...</span>
+      </div>
+      <div class="ctrl-group">
+        <span class="stat">Keywords: <strong id="kwCount">0</strong></span>
+        <span class="stat">ASINs: <strong id="asinTotal">0</strong></span>
+        <span class="stat">SS fields: <strong id="ssTotal">0</strong></span>
+      </div>
+    </div>
+    <div id="kwTabs" class="tabs-strip" style="position:static;margin-top:0">
+      <span class="lbl">📌 关键词:</span>
+      <!-- tabs injected by JS -->
+    </div>
+  </div>
+  <div id="kwPanel" class="table-container" style="overflow-x:auto">
+    <table class="data" id="kwTable">
+      <thead><tr id="kwThead"></tr></thead>
+      <tbody id="kwTbody"><tr><td class="empty" colspan="20">加载中...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ===== Step 2: keyword_asins.json render =====
+let _asins = null;
+let _kwActive = null;
+
+async function loadAsins() {
+  try {
+    const r = await fetch('data/keyword_asins.json?_=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    _asins = await r.json();
+    const keys = Object.keys(_asins.records || {});
+    const totalAsins = keys.reduce((sum, k) => sum + (_asins.records[k].asin_count || 0), 0);
+    const totalSs = keys.reduce((sum, k) => {
+      const ss = _asins.records[k].seller_sprite_summary || {};
+      return sum + Object.values(ss).reduce((a, b) => a + (b || 0), 0);
+    }, 0);
+    document.getElementById('kwCount').textContent = keys.length;
+    document.getElementById('asinTotal').textContent = totalAsins;
+    document.getElementById('ssTotal').textContent = totalSs;
+    document.getElementById('asinsMeta').textContent = '源: ' + (_asins.meta && _asins.meta.source ? _asins.meta.source.slice(0, 60) + '...' : '');
+    renderKwTabs();
+    if (keys.length) {
+      _kwActive = keys[0];
+      renderKwPanel();
+    }
+  } catch (e) {
+    document.getElementById('kwTbody').innerHTML = '<tr><td class="empty" colspan="20">⚠️ 加载失败: ' + e.message + '<br>请确认 data/keyword_asins.json 存在</td></tr>';
+  }
+}
+
+function renderKwTabs() {
+  const tabs = document.getElementById('kwTabs');
+  const keys = Object.keys(_asins.records || {});
+  let html = '<span class="lbl">📌 关键词:</span>';
+  keys.forEach((k, i) => {
+    const [country, kw] = k.split('::');
+    const rec = _asins.records[k];
+    const cn = country.toLowerCase();
+    const active = (k === _kwActive) ? ' active' : '';
+    const badge = rec.asin_count || 0;
+    const ssBadge = rec.seller_sprite_summary ? Object.values(rec.seller_sprite_summary).reduce((a, b) => a + (b || 0), 0) : 0;
+    html += `<div class="tab${active}" data-kw="${k}" data-country="${cn}" onclick="kwTabClick('${k}')">${country} · ${kw}<span class="tab-count">${badge} ASIN</span>${ssBadge > 0 ? ' <span class="tab-count" style="background:#16a34a;color:#fff">'+ssBadge+' SS</span>' : ''}</div>`;
+  });
+  tabs.innerHTML = html;
+}
+
+function kwTabClick(k) {
+  _kwActive = k;
+  renderKwTabs();
+  renderKwPanel();
+}
+
+const KW_COLS = [
+  {key:'rank', title:'#', type:'num', w: 40},
+  {key:'asin', title:'ASIN', type:'text', w: 110},
+  {key:'title', title:'标题', type:'text', w: 280},
+  {key:'price', title:'价格', type:'text', w: 90},
+  {key:'rating', title:'评分', type:'text', w: 100},
+  {key:'reviews', title:'评论数', type:'text', w: 80},
+  {key:'sponsored', title:'SP', type:'text', w: 50},
+  {key:'ss_brand', title:'品牌', type:'text', w: 120},
+  {key:'ss_seller', title:'卖家', type:'text', w: 140},
+  {key:'ss_fulfillment', title:'配送', type:'text', w: 90},
+  {key:'ss_bsr_main', title:'BSR主类目', type:'text', w: 200},
+  {key:'ss_bsr_sub', title:'BSR子类目', type:'text', w: 200},
+  {key:'ss_variants', title:'变体', type:'num', w: 60},
+  {key:'ss_seller_count', title:'卖家数', type:'num', w: 70},
+  {key:'ss_natural_position', title:'自然位', type:'text', w: 110},
+  {key:'ss_monthly_sales_parent', title:'父体月销', type:'text', w: 90},
+  {key:'ss_monthly_sales_child', title:'子体月销', type:'text', w: 90},
+  {key:'fetched_at', title:'抓取时间', type:'text', w: 140},
+];
+
+function renderKwPanel() {
+  const thead = document.getElementById('kwThead');
+  thead.innerHTML = KW_COLS.map(c => `<th data-type="${c.type}" style="width:${c.w}px;min-width:${c.w}px">${c.title}</th>`).join('');
+  const rec = _asins.records[_kwActive];
+  if (!rec) { document.getElementById('kwTbody').innerHTML = '<tr><td class="empty" colspan="20">无数据</td></tr>'; return; }
+  const rows = (rec.detail || []).map(d => {
+    const cells = KW_COLS.map(c => {
+      let v = d[c.key];
+      if (c.key === 'sponsored') v = v ? '✅' : '';
+      if (c.key === 'rank') v = d.rank || '';
+      if (v === undefined || v === null || v === '') v = '<span style="color:#cbd5e1">-</span>';
+      return `<td class="${c.type==='num'?'num':''}" style="max-width:${c.w}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(v+'').replace(/"/g,'&quot;')}">${v}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+  document.getElementById('kwTbody').innerHTML = rows || '<tr><td class="empty" colspan="20">(空)</td></tr>';
+  attachKwSort();
+}
+
+function attachKwSort() {
+  document.querySelectorAll('#kwTable th').forEach((th, idx) => {
+    th.onclick = () => {
+      const asc = !th.classList.contains('sort-asc');
+      th.parentNode.querySelectorAll('th').forEach(x => x.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+      const rows = Array.from(document.querySelectorAll('#kwTbody tr'));
+      const type = th.dataset.type;
+      rows.sort((a, b) => {
+        const av = a.children[idx].innerText.replace(/<[^>]+>/g,'').trim();
+        const bv = b.children[idx].innerText.replace(/<[^>]+>/g,'').trim();
+        if (type === 'num') {
+          const an = parseFloat(av.replace(/[^\d.-]/g,'')) || 0;
+          const bn = parseFloat(bv.replace(/[^\d.-]/g,'')) || 0;
+          return asc ? an - bn : bn - an;
+        }
+        return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+      });
+      const tbody = document.querySelector('#kwTbody');
+      rows.forEach(r => tbody.appendChild(r));
+    };
+  });
+}
+
+loadAsins();
+</script>
+
 </body>
 </html>
