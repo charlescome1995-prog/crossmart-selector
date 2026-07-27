@@ -187,9 +187,33 @@ def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60):
     ws.close()
     if not val:
         return None
+    detail = []
+    for a in val:
+        ss = a.get("seller_sprite", {})
+        flat = {
+            "asin": a.get("asin"),
+            "title": a.get("title"),
+            "price": a.get("price"),
+            "rating": a.get("rating"),
+            "reviews": a.get("reviews"),
+            "sponsored": a.get("sponsored"),
+            "ss_brand": ss.get("brand", ""),
+            "ss_seller": ss.get("seller", ""),
+            "ss_fulfillment": ss.get("fulfillment", ""),
+            "ss_seller_count": ss.get("seller_count", ""),
+            "ss_natural_position": ss.get("natural_position", ""),
+            "ss_bsr_main": ss.get("bsr_main", ""),
+            "ss_bsr_sub": ss.get("bsr_sub", ""),
+            "ss_monthly_sales_parent": ss.get("monthly_sales_parent", ""),
+            "ss_monthly_sales_child": ss.get("monthly_sales_child", ""),
+            "ss_variants": ss.get("variants", ""),
+            "ss_rating": ss.get("ss_rating", ""),
+            "ss_has_ss": ss.get("has_ss", False),
+        }
+        detail.append(flat)
     return {
-        "country": country, "keyword": keyword, "asin_count": len(val),
-        "asin_list": [a["asin"] for a in val], "detail": val,
+        "country": country, "keyword": keyword, "asin_count": len(detail),
+        "asin_list": [a["asin"] for a in detail], "detail": detail,
         "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
 
