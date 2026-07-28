@@ -742,6 +742,30 @@ async function loadAsins() {
   }
 }
 
+function renderKwTabs() {
+  if (!_asins) return;
+  const keys = Object.keys(_asins.records || {});
+  const tabsHtml = keys.map(k => {
+    const rec = _asins.records[k];
+    const cnt = rec.asin_count || 0;
+    const active = k === _kwActive ? ' active' : '';
+    const safeKey = k.replace(/'/g, "\\'");
+    return '<div class="tab' + active + '" data-kw="' + k + '" onclick="switchKwTab(\'' + safeKey + '\')">' + rec.country + ' · ' + rec.keyword + '<span class="tab-count">' + cnt + '</span></div>';
+  }).join('');
+  const tabBar = document.getElementById('kwTabs');
+  // 保留开头的 "📌 关键词:" label
+  const lbl = tabBar.querySelector('.lbl');
+  tabBar.innerHTML = '';
+  if (lbl) tabBar.appendChild(lbl);
+  tabBar.insertAdjacentHTML('beforeend', tabsHtml);
+}
+
+function switchKwTab(key) {
+  _kwActive = key;
+  document.querySelectorAll('#kwTabs .tab').forEach(t => t.classList.toggle('active', t.dataset.kw === key));
+  renderKwActive();
+}
+
 function renderKwActive() {
   const rec = _asins.records[_kwActive];
   if (!rec) return;
