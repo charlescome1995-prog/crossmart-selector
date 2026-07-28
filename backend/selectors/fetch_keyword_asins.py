@@ -130,6 +130,7 @@ EXTRACT_JS = r"""(() => async function() {
     obs.observe(document.body, {childList: true, subtree: true, characterData: true});
   });
 }
+"""
 
 
 def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60):
