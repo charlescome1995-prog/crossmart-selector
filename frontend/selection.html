@@ -681,6 +681,7 @@ function renderAsinToggle(key, asinCount) {
   '</div>';
 }
 
+let _kwActive = null;
 let _asinShown = new Set();
 function toggleAsin(key) {
   const keySafe = key.replace(/[^a-zA-Z0-9]/g, '_');
