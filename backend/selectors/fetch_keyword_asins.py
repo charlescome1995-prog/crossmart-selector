@@ -89,34 +89,10 @@ def get_tabs(port=EDGE_CDP_PORT):
         return []
 
 
-EXTRACT_JS = r"""
-(() => {
-  return new Promise(async (resolve) => {
-    // Wait for cards + SS injection (max 30s)
-    let waited = 0;
-    while (waited < 30000) {
-      const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
-      const ssCards = document.querySelectorAll('[name^="seller-sprite-extension-quick-view-"]');
-      if (cards.length >= 40 && ssCards.length >= 40) break;
-      await new Promise(r => setTimeout(r, 500));
-      waited += 500;
-    }
-    // Scroll to trigger lazy-load
-    window.scrollTo(0, 0);
-    for (let y = 0; y < 6000; y += 300) {
-      window.scrollTo(0, y);
-      await new Promise(r => setTimeout(r, 200));
-    }
-    window.scrollTo(0, 0);
-    // Wait for SS full text (>= 400 chars means full data loaded)
-    waited = 0;
-    while (waited < 20000) {
-      const first = document.querySelector('[name^="seller-sprite-extension-quick-view-"]');
-      if (first && first.innerText.length > 400) break;
-      await new Promise(r => setTimeout(r, 500));
-      waited += 500;
-    }
-    // Extract all 48 ASINs + SS fields
+EXTRACT_JS = r"""(() => async function() {
+  const timeout = setTimeout(() => { extractData(); }, 60000);
+  function extractData() {
+    clearTimeout(timeout);
     const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
     const results = [];
     for (const card of cards) {
@@ -132,63 +108,28 @@ EXTRACT_JS = r"""
       const reviews = reviewsEl ? (reviewsEl.getAttribute('aria-label') || reviewsEl.textContent || '').trim() : '';
       const sponsored = !!(card.querySelector('.s-sponsored-info, [class*=sponsored]'));
       const ssContainer = card.querySelector('[name^="seller-sprite-extension-quick-view-"]');
-      const ss = {has_ss: !!ssContainer, brand:'', seller:'', fulfillment:'', seller_count:'', natural_position:'', bsr_main:'', bsr_sub:'', monthly_sales_parent:'', monthly_sales_child:'', revenue:'', fba_fee:'', margin:'', variants:'', ss_price:'', ss_rating:'', ss_review_count:'', delivery_days:'', prime_days:'', launch_date:'', days_listed:'', all_traffic_words:'', organic_keywords:'', ad_keywords:'', suggest_keywords:''};
-      if (ssContainer) {
-        const t = ssContainer.innerText || '';
-        const mBrand = t.match(/\u54c1\u724c:\s*([^\n]+)/);
-        if (mBrand) ss.brand = mBrand[1].trim();
-        const mSeller = t.match(/\u5356\u5bb6:([^\n]+)/);
-        if (mSeller) ss.seller = mSeller[1].trim();
-        const mFul = t.match(/\u914d\u9001:\s*([^\n]+)/);
-        if (mFul) ss.fulfillment = mFul[1].trim();
-        const mSC = t.match(/\u5356\u5bb6\u6570:\s*([^\n]+)/);
-        if (mSC) ss.seller_count = mSC[1].trim();
-        const mNat = t.match(/\u81ea\u7136\u4f4d[:\uff1a]\s*([^\n]+)/);
-        if (mNat) ss.natural_position = mNat[1].trim();
-        const bsrs = [...t.matchAll(/#([\d,]+)\s+in\s+([^\n]+)/g)];
-        if (bsrs[0]) ss.bsr_main = bsrs[0][1] + ' in ' + bsrs[0][2];
-        if (bsrs[1]) ss.bsr_sub = bsrs[1][1] + ' in ' + bsrs[1][2];
-        const mP = t.match(/\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u7236\u4f53\):\s*([^*\n]+)/);
-        if (mP) ss.monthly_sales_parent = mP[1].trim();
-        const mC = t.match(/\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u5b50\u4f53\):\s*([^*\n]+)/);
-        if (mC) ss.monthly_sales_child = mC[1].trim();
-        const mRev = t.match(/\u9500\u552e\u989d:\s*([^\n]+)/);
-        if (mRev) ss.revenue = mRev[1].trim();
-        const mFee = t.match(/FBA\u8d39\u7528:\s*([^\n]+)/);
-        if (mFee) ss.fba_fee = mFee[1].trim();
-        const mMar = t.match(/\u6bdb\u5229\u7387:\s*([^\n]+)/);
-        if (mMar) ss.margin = mMar[1].trim();
-        const mVar = t.match(/\u53d8\u4f53\u6570:\s*(\d+)/);
-        if (mVar) ss.variants = mVar[1];
-        const mSP = t.match(/\u4ef7\u683c:\s*\$?\s*([\d.,]+)/);
-        if (mSP) ss.ss_price = '$' + mSP[1].trim();
-        const mR = t.match(/\u8bc4\u5206\(([^\n]+)\)/);
-        if (mR) {
-          const rm = mR[1].match(/([\d.]+)\(([0-9,]+)\)/);
-          if (rm) { ss.ss_rating = rm[1]; ss.ss_review_count = rm[2]; }
-          else ss.ss_rating = mR[1];
-        }
-        const mDD = t.match(/\u914d\u9001\u65f6\u957f:\s*(\d+\s*\u5929)/);
-        if (mDD) ss.delivery_days = mDD[1];
-        const mPD = t.match(/Prime\u914d\u9001\u65f6\u957f:\s*(\d+\s*\u5929)/);
-        if (mPD) ss.prime_days = mPD[1];
-        const mLD = t.match(/\u4e0a\u67b6\u65f6\u95f4:\s*(\d{4}-\d{2}-\d{2})\s*\((\d+\s*\u5929)\)/);
-        if (mLD) { ss.launch_date = mLD[1]; ss.days_listed = mLD[2]; }
-        const mAll = t.match(/\u5168\u90e8\u6d41\u91cf\u8bcd:\s*(\d+)/);
-        if (mAll) ss.all_traffic_words = mAll[1];
-        const mOrg = t.match(/\u81ea\u7136\u641c\u7d22\u8bcd:\s*(\d+)/);
-        if (mOrg) ss.organic_keywords = mOrg[1];
-        const mAd = t.match(/\u5e7f\u544a\u6d41\u91cf\u8bcd:\s*(\d+)/);
-        if (mAd) ss.ad_keywords = mAd[1];
-        const mSug = t.match(/\u641c\u7d22\u63a8\u8350\u8bcd:\s*(\d+)/);
-        if (mSug) ss.suggest_keywords = mSug[1];
-      }
-      results.push({asin, title: title.slice(0,200), price, rating, reviews, sponsored, seller_sprite: ss});
+      const ss_text = ssContainer ? ssContainer.innerText : '';
+      results.push({asin, title: title.slice(0,200), price, rating, reviews, sponsored, ss_text: ss_text.slice(0, 5000)});
     }
-    resolve(results);
+    return results;
+  }
+  const initial = document.querySelectorAll('[name^="seller-sprite-extension-quick-view-"]').length;
+  if (initial >= 20) return extractData();
+  return new Promise((resolve) => {
+    function checkReady() {
+      const ssEls = document.querySelectorAll('[name^="seller-sprite-extension-quick-view-"]');
+      if (ssEls.length < 20) return false;
+      let maxLen = 0;
+      for (const e of ssEls) if (e.innerText.length > maxLen) maxLen = e.innerText.length;
+      return maxLen > 200;
+    }
+    if (checkReady()) { resolve(extractData()); return; }
+    const obs = new MutationObserver(() => {
+      if (checkReady()) { obs.disconnect(); resolve(extractData()); }
+    });
+    obs.observe(document.body, {childList: true, subtree: true, characterData: true});
   });
-})
-"""
+}
 
 
 def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60):
@@ -202,7 +143,7 @@ def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60):
     log(f"  tab {target_tab['id'][:8]}... ({target_tab.get('title','')[:40]})")
 
     mid = [0]
-    def cmd(method, params=None, t=30):
+    def cmd(method, params=None, t=100):
         mid[0] += 1
         ws.send(json.dumps({"id": mid[0], "method": method, "params": params or {}}))
         ws.settimeout(t)
@@ -223,23 +164,61 @@ def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60):
     domain = DOMAIN_MAP.get(country, "amazon.com")
     url = f"https://{domain}/s?k=" + re.sub(r"\s+", "+", keyword.strip())
     log(f"  navigate {url}")
+    cmd("Page.enable", t=5)
     cmd("Page.navigate", {"url": url})
-    time.sleep(SEARCH_PAUSE + 5)
-
+    # Poll until location.href matches target AND cards exist
+    waited = 0
+    domain = DOMAIN_MAP.get(country, "amazon.com")
+    # Phase 1: wait for navigation + cards (up to 45s)
+    waited = 0
+    while waited < 10000:
+        ev = cmd("Runtime.evaluate", {"expression": "(() => ({url: location.href, rs: document.readyState, cards: document.querySelectorAll(\"div[data-component-type=s-search-result]\").length}))()"}, t=5)
+        v = ev.get("result", {}).get("value", {})
+        if v.get("url", "").find(domain) >= 0 and v.get("rs") == "complete" and v.get("cards", 0) >= 10:
+            break
+        time.sleep(1)
+        waited += 1000
+    # Phase 2: scroll to trigger lazy-load
     for y in range(0, 5500, 300):
-        cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"})
-        time.sleep(0.4)
-    cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"})
-    time.sleep(5)
+        cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, " + str(y) + ")"}, t=3)
+        time.sleep(0.3)
+    cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
+    # Phase 3: wait for SellerSprite injection (up to 30s)
+    waited = 0
+    while waited < 15000:
+        ev = cmd("Runtime.evaluate", {"expression": "(() => document.querySelectorAll(String.fromCharCode(91,93)).length)"}, t=5)
+        n = ev.get("result", {}).get("value", 0)
+        if isinstance(n, int) and n >= 20:
+            break
+        time.sleep(1)
+        waited += 1000
+    # Phase 4: extra wait for SS to fully inject data into containers (up to 20s)
+    waited = 0
+    while waited < 10000:
+        ev = cmd("Runtime.evaluate", {"expression": "(() => { const els = document.querySelectorAll(chr(34) + chr(34) + chr(34) + chr(34) + chr(34) + chr(34) + chr(34) + chr(34)).length}"}, t=5)
 
-    result = cmd("Runtime.evaluate", {"expression": EXTRACT_JS, "returnByValue": True})
+        v = ev.get("result", {}).get("value", {})
+        if v.get("maxLen", 0) >= 300:
+            break
+        time.sleep(1)
+        waited += 1000
+    # scroll to trigger lazy-load SS
+    for y in range(0, 5500, 300):
+        cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"}, t=3)
+        time.sleep(0.3)
+    cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
+    time.sleep(8)  # wait for SS to fully inject on visible cards
+
+    result = cmd("Runtime.evaluate", {"expression": EXTRACT_JS, "returnByValue": True, "awaitPromise": True})
     val = result.get("result", {}).get("value")
     ws.close()
     if not val:
         return None
     detail = []
     for a in val:
-        ss = a.get("seller_sprite", {})
+        ss_text = a.get("ss_text", "")
+        ss = parse_ss_text(ss_text)
+        ss["ss_has_ss"] = bool(ss_text)
         flat = {
             "asin": a.get("asin"),
             "title": a.get("title"),
@@ -279,6 +258,63 @@ def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60):
         "asin_list": [a["asin"] for a in detail], "detail": detail,
         "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
+
+
+# Parser: extract all 24 SS fields from raw ss_text (Chinese regex via \u escapes)
+SS_REGEX = [
+    ("ss_brand", re.compile("\u54c1\u724c:\s*([^\n]+)")),
+    ("ss_seller", re.compile("\u5356\u5bb6:([^\n]+)")),
+    ("ss_fulfillment", re.compile("\u914d\u9001:\s*([^\n]+)")),
+    ("ss_seller_count", re.compile("\u5356\u5bb6\u6570:\s*(\d+)")),
+    ("ss_natural_position", re.compile("\u81ea\u7136\u4f4d[:\uff1a]\s*([^\n]+)")),
+    ("ss_monthly_sales_parent", re.compile("\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u7236\u4f53\):\s*([^*\n]+)")),
+    ("ss_monthly_sales_child", re.compile("\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u5b50\u4f53\):\s*([^*\n]+)")),
+    ("ss_revenue", re.compile("\u9500\u552e\u989d:\s*([^\n]+)")),
+    ("ss_fba_fee", re.compile("FBA\u8d39\u7528:\s*([^\n]+)")),
+    ("ss_margin", re.compile("\u6bdb\u5229\u7387:\s*([^\n]+)")),
+    ("ss_variants", re.compile("\u53d8\u4f53\u6570:\s*(\d+)")),
+    ("ss_price", re.compile("\u4ef7\u683c:\s*\$?\s*([\d.,]+)")),
+    ("ss_delivery_days", re.compile("\u914d\u9001\u65f6\u957f:\s*(\d+\s*\u5929)")),
+    ("ss_prime_days", re.compile("Prime\u914d\u9001\u65f6\u957f:\s*(\d+\s*\u5929)")),
+    ("ss_launch_date", re.compile("\u4e0a\u67b6\u65f6\u95f4:\s*(\d{4}-\d{2}-\d{2})")),
+    ("ss_days_listed", re.compile("\u4e0a\u67b6\u65f6\u95f4:\s*\d{4}-\d{2}-\d{2}\s*\((\d+)\s*\u5929\)")),
+    ("ss_all_traffic_words", re.compile("\u5168\u90e8\u6d41\u91cf\u8bcd:\s*(\d+)")),
+    ("ss_organic_keywords", re.compile("\u81ea\u7136\u641c\u7d22\u8bcd:\s*(\d+)")),
+    ("ss_ad_keywords", re.compile("\u5e7f\u544a\u6d41\u91cf\u8bcd:\s*(\d+)")),
+    ("ss_suggest_keywords", re.compile("\u641c\u7d22\u63a8\u8350\u8bcd:\s*(\d+)")),
+]
+
+
+def parse_ss_text(ss_text):
+    """Parse SellerSprite raw text into 24 SS fields. Uses regex (raw string list at top of file)."""
+    if not ss_text:
+        return {}
+    out = {}
+    for key, rx in SS_REGEX:
+        m = rx.search(ss_text)
+        if m:
+            v = m.group(1).strip()
+            # Clean up
+            if key == "ss_price" and not v.startswith("$"):
+                v = "$" + v
+            out[key] = v
+    # BSR main / sub (could be 1 or 2)
+    bsr_matches = re.findall(r"#([\d,]+)\s+in\s+([^\n]+)", ss_text)
+    if len(bsr_matches) > 0:
+        out["ss_bsr_main"] = bsr_matches[0][0] + " in " + bsr_matches[0][1]
+    if len(bsr_matches) > 1:
+        out["ss_bsr_sub"] = bsr_matches[1][0] + " in " + bsr_matches[1][1]
+    # Rating: 4.2(1,007) or 4.2 out of 5 stars
+    m = re.search(r"\u8bc4\u5206\(([^\n]+)\)", ss_text)
+    if m:
+        inner = m.group(1)
+        rm = re.match(r"([\d.]+)\(([\d,]+)\)", inner)
+        if rm:
+            out["ss_rating"] = rm.group(1)
+            out["ss_review_count"] = rm.group(2)
+        else:
+            out["ss_rating"] = inner
+    return out
 
 
 def run(start_with_one=None):

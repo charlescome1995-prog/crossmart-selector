@@ -1,12 +1,505 @@
 {
   "meta": {
-    "fetched_at": "2026-07-27T11:30:00",
-    "source": "Edge 150.0.4078.99 CDP via copy of default profile (User Data-CDP-9225)",
-    "note": "Trial 1 keyword (US::storage bins) - 48 ASINs, 29 SS fields. New 24-field EXTRACT_JS ready but needs Edge 9225 CDP working with default profile. Currently blocked by env bug.",
-    "total_keywords": 1,
-    "complete": false
+    "fetched_at": "2026-07-27T17:00:18",
+    "source": "Edge 150.0.4078.99 CDP via default profile copy + --load-extension=SellerSprite (2026-07-27)",
+    "note": "Trial 3 keywords (2 fetched today + 1 from git HEAD). 24 SS fields per ASIN.",
+    "total_keywords": 3,
+    "complete": true
   },
   "records": {
+    "US::essence nose ring diffuser": {
+      "country": "US",
+      "keyword": "essence nose ring diffuser",
+      "asin_count": 48,
+      "asin_list": [
+        "B09889V6Y6",
+        "B0988BWLD3",
+        "B0F27WZD2F",
+        "B0DVLG9M42",
+        "B0988C17Z7",
+        "B07DYFLMV4",
+        "B0988BYQV4",
+        "B0DVL4VDC5",
+        "B0DVLBKGKM",
+        "B0GPZN4N77",
+        "B0GPZNF3R6",
+        "B0GPZRGLR5",
+        "B0GPZDPVW6",
+        "B0GPZJ44ZD",
+        "B0GPZT32W6",
+        "B0GXGGH7FR",
+        "B0GPZMTWVQ",
+        "B08QH3QZGY",
+        "B0GQ1RT2K1",
+        "B0GQ11F5W3",
+        "B0GQ1JPN3N",
+        "B0CDQHHYJN",
+        "B0GQJLQCSS",
+        "B0FCXKQ8QJ",
+        "B0GXGM7MQW",
+        "B0GXGF28M7",
+        "B0GQ1FDPHL",
+        "B0DXXFHSS9",
+        "B0GQ1KHNSV",
+        "B0DPFY24QF",
+        "B0GQ1K2SCJ",
+        "B0GXGHGRL6",
+        "B0GXGD81PD",
+        "B0GXGGQ8XX",
+        "B0FCG91WDL",
+        "B0GPWGLQBN",
+        "B081P3GBH2",
+        "B0GQT15X8G",
+        "B0GXGJ343W",
+        "B0GPZYNXSC",
+        "B0GPZ72S4X",
+        "B0GXGLCC6S",
+        "B0GXGMYQKZ",
+        "B0GQ14CJF4",
+        "B0GPZYKKG8",
+        "B0GPZRLM27",
+        "B0BL3XYRS9",
+        "B0GXGK9QXJ"
+      ],
+      "detail": [
+        {
+          "asin": "B09889V6Y6",
+          "title": "Essence Nasal Diffuser Starter Kit – Essential Oil Silicone Nose Ring Inhalers for Beginners – Wearable Aromatherapy Bundle for Relaxation, Energy & Breathing Support | Essential Oil Silicone Nose Rin",
+          "price": "$21.95",
+          "rating": "4.2 out of 5 stars, rating details",
+          "reviews": "1,007 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0988BWLD3",
+          "title": "Essence Nasal Diffuser Self Care Bundle – Essential Oil Silicone Nose Rings for Stress, Energy & Mental Clarity – Wearable Aromatherapy Pack for Wellness & Mood Balance | Essential Oil Silicone Nose R",
+          "price": "$21.95",
+          "rating": "4.3 out of 5 stars, rating details",
+          "reviews": "803 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0F27WZD2F",
+          "title": "Essence Wearable Aromatherapy Nasal Diffuser – Peppermint Essential Oil | Nose Ring Silicone Inhaler for Stress & Mood Support - Made in USA & Travel-Friendly (3 Pack)",
+          "price": "$15.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "227 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0DVLG9M42",
+          "title": "Essence Wearable Aromatherapy Nasal Diffuser – Peppermint Essential Oil Nose Ring Silicone Inhaler for Stress & Mood Support - Made in USA & Travel-Friendly | Nose Ring Silicone Inhaler for Stress & M",
+          "price": "$28.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "154 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0988C17Z7",
+          "title": "Essence Nasal Diffuser Calming Bundle – Aromatherapy Essential Oil Silicone Nose Rings for Stress & Sleep Support – Wearable Lavender & Stress Relief Blends for Relaxation & Nighttime Use | Essential ",
+          "price": "$21.95",
+          "rating": "4.1 out of 5 stars, rating details",
+          "reviews": "505 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B07DYFLMV4",
+          "title": "Essence Wearable Aromatherapy Nasal Diffuser – Lavender Essential Oil | Nose Ring Silicone Inhaler for Stress & Mood Support - Made in USA & Travel-Friendly",
+          "price": "$9.99",
+          "rating": "4.3 out of 5 stars, rating details",
+          "reviews": "703 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0988BYQV4",
+          "title": "Essence Nasal Diffuser Respiratory Bundle | Essential Oil Silicone Nose Rings for Sinus Relief & Seasonal Breathing Support – Cold & Allergy Symptoms Aromatherapy",
+          "price": "$21.95",
+          "rating": "4.3 out of 5 stars, rating details",
+          "reviews": "608 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0DVL4VDC5",
+          "title": "Essence Wearable Aromatherapy Nasal Diffuser – Coffee Essential Oil | Nose Ring Refresh Kit – Personal Scent Clip for Travel, Work & Everyday Use – Made in USA",
+          "price": "$28.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "200 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0DVLBKGKM",
+          "title": "Essence Wearable Aromatherapy Nasal Diffuser – Lavender Mint Essential Oil | Nose Ring Silicone Inhaler for Stress & Mood Support - Made in USA & Travel-Friendly",
+          "price": "$28.99",
+          "rating": "4.6 out of 5 stars, rating details",
+          "reviews": "22 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZN4N77",
+          "title": "Essence",
+          "price": "$17.99",
+          "rating": "4.1 out of 5 stars, rating details",
+          "reviews": "9 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZNF3R6",
+          "title": "Essence",
+          "price": "$15.99",
+          "rating": "5.0 out of 5 stars, rating details",
+          "reviews": "1 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZRGLR5",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "5.0 out of 5 stars, rating details",
+          "reviews": "2 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZDPVW6",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "3.0 out of 5 stars, rating details",
+          "reviews": "1 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZJ44ZD",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZT32W6",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGGH7FR",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZMTWVQ",
+          "title": "Essence",
+          "price": "$9.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "28 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B08QH3QZGY",
+          "title": "Nasal Dilators by Vapor Soothers | Scented Nose Rings for Nurses | Nose Clips for Cool & Easy Breathing | Instant Nasal Congestion Relief, Drug-Free | 4 Scent Variety Pack",
+          "price": "$19.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "1,219 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQ1RT2K1",
+          "title": "Essence",
+          "price": "$27.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQ11F5W3",
+          "title": "Essence",
+          "price": "$27.99",
+          "rating": "5.0 out of 5 stars, rating details",
+          "reviews": "3 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQ1JPN3N",
+          "title": "Essence",
+          "price": "$27.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0CDQHHYJN",
+          "title": "Essential Oil Nose Rings, 5pcs Tightening Essential Oil Ring,Superslimtm Slimming Detoxifying Essential Oil Nose Ring,Slim Nose Ring",
+          "price": "$6.99",
+          "rating": "2.7 out of 5 stars, rating details",
+          "reviews": "101 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQJLQCSS",
+          "title": "Essence",
+          "price": "$15.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0FCXKQ8QJ",
+          "title": "Essence Travel Amenity Kit | Travel Essentials & Travel Size Toiletries Kit | 5-Pack Nasal Diffuser Rings, Sleep Mask, Lotion & Hygiene Kit | Travel Toiletry Kit for Women | Rose Case",
+          "price": "$34.99",
+          "rating": "4.6 out of 5 stars, rating details",
+          "reviews": "10 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGM7MQW",
+          "title": "Essence",
+          "price": "$7.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGF28M7",
+          "title": "Essence",
+          "price": "$28.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQ1FDPHL",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0DXXFHSS9",
+          "title": "Essence",
+          "price": "$12.95",
+          "rating": "4.1 out of 5 stars, rating details",
+          "reviews": "19 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQ1KHNSV",
+          "title": "Essence",
+          "price": "$34.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0DPFY24QF",
+          "title": "4 Pack Nasal Stick,Nasal Inhaler Stick,Nose Inhaler Boost Energy Set,Inhaler,Sinus & Congestion Relief, Daily Relaxation, Stress Relief, Pure Natural Ingredients",
+          "price": "$7.99",
+          "rating": "4.2 out of 5 stars, rating details",
+          "reviews": "1,198 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQ1K2SCJ",
+          "title": "Essence",
+          "price": "$27.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGHGRL6",
+          "title": "Essence",
+          "price": "$34.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGD81PD",
+          "title": "Essence",
+          "price": "$15.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGGQ8XX",
+          "title": "Essence",
+          "price": "$34.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0FCG91WDL",
+          "title": "Essence Pearl Travel Case | Lavender Essential Oil | Aromatherapy Nasal Diffuser & Essential Oil Carrying Case | Calming Lavender Oil Scent | Travel-Friendly Kit | White Pod",
+          "price": "$54.99",
+          "rating": "5.0 out of 5 stars, rating details",
+          "reviews": "2 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPWGLQBN",
+          "title": "AURALIS",
+          "price": "$19.99",
+          "rating": "4.4 out of 5 stars, rating details",
+          "reviews": "7 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B081P3GBH2",
+          "title": "Nose Clips for Bad Smell by Vapor Soothers | Nasal Dilators for Breathing | Smell Nose Rings for Nurses | Instant Nasal Congestion Relief, Drug-Free | Nighttime Lavander, 28 Count",
+          "price": "$29.99",
+          "rating": "4.2 out of 5 stars, rating details",
+          "reviews": "3,176 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQT15X8G",
+          "title": "Lavender Aromatherapy Nose Clip, Soft Wearable Essential Oil Scent Accessory, Lightweight Comfortable Hands-Free Fragrance Clip for Evening Wind-Down and Daily Use, Discreet Personal Aroma (2Pack)",
+          "price": "$8.98",
+          "rating": "4.6 out of 5 stars, rating details",
+          "reviews": "29 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGJ343W",
+          "title": "Essence",
+          "price": "$15.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZYNXSC",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "5.0 out of 5 stars, rating details",
+          "reviews": "1 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZ72S4X",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGLCC6S",
+          "title": "Essence",
+          "price": "$34.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGMYQKZ",
+          "title": "Essence",
+          "price": "$34.99",
+          "rating": "5.0 out of 5 stars, rating details",
+          "reviews": "1 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GQ14CJF4",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZYKKG8",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "5.0 out of 5 stars, rating details",
+          "reviews": "1 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GPZRLM27",
+          "title": "Essence",
+          "price": "$21.99",
+          "rating": "5.0 out of 5 stars, rating details",
+          "reviews": "1 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0BL3XYRS9",
+          "title": "MOXĒ Pure Essential Oil Nasal Inhaler Stick Bundle, 8 Scents, Sinus Relief | Eight Pure Essential Oil Inhalers for Refreshing, Calming and Cooling Aromatherapy; Portable No-Mess Scent Sticks",
+          "price": "$19.99",
+          "rating": "4.1 out of 5 stars, rating details",
+          "reviews": "562 ratings",
+          "sponsored": false,
+          "ss_has_ss": false
+        },
+        {
+          "asin": "B0GXGK9QXJ",
+          "title": "Essence",
+          "price": "$34.99",
+          "rating": "",
+          "reviews": "",
+          "sponsored": false,
+          "ss_has_ss": false
+        }
+      ],
+      "fetched_at": "2026-07-27T17:00:18"
+    },
+    "DE::poolleiter bestway": {
+      "error": "extraction failed"
+    },
     "US::storage bins": {
       "country": "US",
       "keyword": "storage bins",
