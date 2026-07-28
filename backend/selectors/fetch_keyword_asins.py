@@ -287,8 +287,8 @@ SS_REGEX = [
     ("ss_price", re.compile("\u4ef7\u683c:\s*\$?\s*([\d.,]+)")),
     ("ss_delivery_days", re.compile("\u914d\u9001\u65f6\u957f:\s*(\d+\s*\u5929)")),
     ("ss_prime_days", re.compile("Prime\u914d\u9001\u65f6\u957f:\s*(\d+\s*\u5929)")),
-    ("ss_launch_date", re.compile("\u4e0a\u67b6\u65f6\u95f4:\s*(\d{4}-\d{2}-\d{2})")),
-    ("ss_days_listed", re.compile("\u4e0a\u67b6\u65f6\u95f4:\s*\d{4}-\d{2}-\d{2}\s*\((\d+)\s*\u5929\)")),
+    ("ss_launch_date", re.compile("\u4e0a\u67b6\u65f6\u95f4[\s::\uff1a]+(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})")),
+    ("ss_days_listed", re.compile("\u4e0a\u67b6\u65f6\u95f4[\s::\uff1a]+\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\s*[\(\uff08]?([\d,]+)\s*\u5929[\)\uff09]?")),
     ("ss_all_traffic_words", re.compile("\u5168\u90e8\u6d41\u91cf\u8bcd:\s*(\d+)")),
     ("ss_organic_keywords", re.compile("\u81ea\u7136\u641c\u7d22\u8bcd:\s*(\d+)")),
     ("ss_ad_keywords", re.compile("\u5e7f\u544a\u6d41\u91cf\u8bcd:\s*(\d+)")),
@@ -308,6 +308,8 @@ def parse_ss_text(ss_text):
             # Clean up
             if key == "ss_price" and not v.startswith("$"):
                 v = "$" + v
+            if key == "ss_days_listed":
+                v = v.replace(",", "")  # "3,868" -> "3868"
             out[key] = v
     # BSR main / sub (could be 1 or 2)
     bsr_matches = re.findall(r"#([\d,]+)\s+in\s+([^\n]+)", ss_text)
