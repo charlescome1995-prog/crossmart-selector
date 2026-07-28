@@ -40,23 +40,133 @@ def find_edge_exe():
     return "msedge"
 
 
-def ensure_edge_running(port=None):
+def read_devtools_active_port():
+    """
+    读 Edge 写入的 DevToolsActivePort 文件 —— 拿 Edge 实际在用的 CDP 端口。
+
+    背景：Edge 在 Windows 11 上有时会忽略 --remote-debugging-port=9225 参数，
+    自动 fallback 到别的端口（常见 9222 / 9223 / 9224），这个端口会写到
+    %LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\DevToolsActivePort 里。
+    读这个文件就能拿到 Edge 真实监听的端口，符合铁律（仍是同一个默认账户的 Edge）。
+    """
+    port_file = os.path.join(
+        os.environ.get("LOCALAPPDATA", ""),
+        "Microsoft", "Edge", "User Data", "DevToolsActivePort"
+    )
+    if not os.path.exists(port_file):
+        return None
+    try:
+        with open(port_file, "r", encoding="utf-8") as f:
+            first_line = f.readline().strip()
+        port = int(first_line)
+        return port
+    except (ValueError, OSError):
+        return None
+
+
+def detect_edge_cdp_port():
+    """
+    自动发现 Edge 实际在用的 CDP 端口：
+      1) 先试铁律端口 9225
+      2) 再试 DevToolsActivePort 文件里写的端口
+      3) 再扫 9222 / 9223 / 9224（Edge 常见 fallback）
+    返回真正 listen 的端口，没找到返回 None。
+    """
+    iron_port = EDGE_PORT  # 铁律 9225（从 cdp_bridge 模块顶部）
+    # 1. 铁律端口
+    if _is_port_alive(iron_port):
+        return iron_port
+    # 2. Edge 实际端口（DevToolsActivePort 文件）
+    fallback = read_devtools_active_port()
+    if fallback and fallback != iron_port and _is_port_alive(fallback):
+        print(f"  [CDP] Edge 没绑铁律 {iron_port}，实际在 {fallback}（DevToolsActivePort）")
+        return fallback
+    # 3. 常见 fallback 端口
+    for p in (9222, 9223, 9224, 9221):
+        if _is_port_alive(p):
+            print(f"  [CDP] Edge 在 fallback 端口 {p} listen")
+            return p
+    return None
+
+
+def _is_port_alive(port):
+    """9225 是否真在 listen（curl 不通 = Edge 没绑端口，但进程可能在）。"""
+    try:
+        urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3)
+        return True
+    except:
+        return False
+
+
+def _kill_existing_edge():
+    """Kill 所有 msedge 进程（主+子），释放 default profile 锁。
+
+    ⛔ 铁律：仍然不指定 --user-data-dir，杀进程后再启 Edge 会自动加载默认 profile。
+    """
+    import subprocess as _sp
+    try:
+        # taskkill /F /IM msedge.exe /T —— /T 也杀子进程
+        out = _sp.run(
+            ["taskkill", "/F", "/IM", "msedge.exe", "/T"],
+            capture_output=True, text=True, timeout=15,
+        )
+        killed = sum(1 for line in out.stdout.splitlines() if "成功" in line or "SUCCESS" in line.upper())
+        print(f"  🧹 关闭现有 msedge 进程：{killed} 个")
+    except Exception as e:
+        print(f"  ⚠ taskkill 失败：{e}")
+    time.sleep(2)  # profile lock 释放
+
+
+def ensure_edge_running(port=None, auto_kill=True):
     """
     确保闫旭的默认Edge在运行+CDP端口已开。
     始终使用系统默认profile，不指定 --user-data-dir，让Edge自动加载闫旭的账户。
+
+    auto_kill=True: 当端口不通但 msedge 进程仍在时，自动 taskkill /F /IM msedge.exe /T
+                    释放 profile 锁，再重启。这是修"PID 3592 占着 9225 绑定失败"的常见故障。
     """
     if port is None:
         port = EDGE_PORT
 
-    # 直接尝试指定端口（9225 = 闫旭的默认Edge）
+    # 0. 先看 Edge 实际在哪个端口 listen（绕过 Edge 静默换端口 bug）
+    actual = detect_edge_cdp_port()
+    if actual and actual != port:
+        print(f"  ℹ️ Edge 实际端口是 {actual}，不是铁律的 {port}（自动适配）")
+
+    # 1. 端口活了 = 一切 OK
+    if _is_port_alive(port):
+        print(f"  ✅ Edge已在运行 (port={port})")
+        return True
+    # 也认 Edge fallback 到的端口
+    if actual and _is_port_alive(actual):
+        print(f"  ✅ Edge已在运行 (port={actual}，铁律 {port} fallback)")
+        return True
+
+    # 2. 端口没活 —— 看是不是 msedge 占着 profile 锁
+    import subprocess as _sp
+    msedge_count = 0
     try:
-        req = urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3)
-        tabs = json.loads(req.read())
-        if tabs:
-            print(f"  ✅ Edge已在运行 (port={port})")
-            return True
+        msedge_count = len(_sp.check_output(
+            ["tasklist", "/FI", "IMAGENAME eq msedge.exe"],
+            text=True, timeout=5,
+        ).splitlines()) - 3  # 减去表头/空行/分隔
     except:
         pass
+    if msedge_count > 0:
+        print(f"  ⚠ 端口 {port} 未监听，但有 {msedge_count} 个 msedge 进程在跑（profile 锁占着）")
+        if auto_kill:
+            _kill_existing_edge()
+            # kill 后再确认端口是否被其他东西占
+            if _is_port_alive(port):
+                print(f"  ✅ kill 后端口 {port} 通了（其他实例接管）")
+                return True
+            actual2 = detect_edge_cdp_port()
+            if actual2 and _is_port_alive(actual2):
+                print(f"  ✅ kill 后 Edge 在 fallback 端口 {actual2} listen")
+                return True
+        else:
+            print(f"  ❌ 请手动先关掉所有 msedge 进程再跑脚本。")
+            return False
 
     # 3. 启动新实例
     exe = find_edge_exe()
@@ -77,22 +187,41 @@ def ensure_edge_running(port=None):
     ]
     if profile_dir:
         args.insert(1, f"--user-data-dir={profile_dir}")
-    subprocess.Popen(args)
+    proc = subprocess.Popen(args)
+    print(f"  🚀 Edge 进程已启 (PID {proc.pid})")
 
-    # 等待CDP端口可用
-    deadline = time.time() + 20
+    # 等待CDP端口可用（延长到 30s —— Edge 第一次冷启要加载 profile/extension 比较慢）
+    deadline = time.time() + 30
     while time.time() < deadline:
-        try:
-            req = urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3)
-            tabs = json.loads(req.read())
-            if tabs:
-                print(f"  ✅ Edge启动成功 (port={port})")
-                return True
-        except:
-            pass
+        if _is_port_alive(port):
+            tabs = json.loads(urllib.request.urlopen(
+                f"http://127.0.0.1:{port}/json", timeout=3).read())
+            print(f"  ✅ Edge启动成功 (port={port}, {len(tabs)} tabs)")
+            return True
+        # 也接受 Edge fallback 到的端口
+        actual_now = read_devtools_active_port()
+        if actual_now and _is_port_alive(actual_now):
+            tabs = json.loads(urllib.request.urlopen(
+                f"http://127.0.0.1:{actual_now}/json", timeout=3).read())
+            print(f"  ✅ Edge 启动到 fallback 端口 {actual_now}（{len(tabs)} tabs），铁律 {port} 被占用")
+            return True
         time.sleep(1)
 
-    print(f"  ❌ Edge启动失败")
+    # 4. 还是失败：详细诊断
+    print(f"  ❌ Edge启动失败（30s 内 {port} 仍未 listen）")
+    print(f"  诊断信息：")
+    try:
+        out = _sp.check_output(
+            ["tasklist", "/FI", "IMAGENAME eq msedge.exe"], text=True, timeout=5)
+        print(f"  📋 当前 msedge 进程：\n{out}")
+    except:
+        pass
+    devtools_port = read_devtools_active_port()
+    if devtools_port:
+        print(f"  💡 DevToolsActivePort 文件写的是 {devtools_port}（但没 listen）")
+    print(f"  💡 手动启动命令（按铁律）：")
+    print(f'     "{exe}" --remote-debugging-port={port} '
+          f'--remote-allow-origins=* --new-window about:blank')
     return False
 
 
@@ -118,21 +247,21 @@ class CDPBrowser:
         print(f"  ✅ CDP已连接 — {len(self.tabs)}个标签页")
 
     def _detect_port(self):
-        """检测哪个CDP端口可用：环境变量指定则用指定值，否则检测OpenClaw"""
+        """检测哪个CDP端口可用：环境变量指定则用指定值，否则检测Edge实际端口+OpenClaw"""
         if _USER_SET_PORT:
             print(f"  [CDP] 使用指定端口: {EDGE_PORT}")
             return EDGE_PORT
-        ports_to_try = [OPENCLAW_CDP_PORT, EDGE_PORT]
-        for p in ports_to_try:
-            try:
-                req = urllib.request.urlopen(f"http://127.0.0.1:{p}/json", timeout=3)
-                tabs = json.loads(req.read())
-                if tabs:
-                    print(f"  [CDP] 使用端口: {p}")
-                    return p
-            except:
-                pass
-        return EDGE_PORT  # fallback，让ensure_edge_running去启动
+        # 1. 优先 Edge 实际 listen 的端口（含 fallback）
+        actual = detect_edge_cdp_port()
+        if actual:
+            print(f"  [CDP] 使用 Edge 端口: {actual}")
+            return actual
+        # 2. OpenClaw 18800
+        if _is_port_alive(OPENCLAW_CDP_PORT):
+            print(f"  [CDP] 使用 OpenClaw 端口: {OPENCLAW_CDP_PORT}（注意：违反 selector 铁律）")
+            return OPENCLAW_CDP_PORT
+        # 3. fallback 给 ensure_edge_running 去启动
+        return EDGE_PORT
 
     def _refresh_tabs(self):
         req = urllib.request.urlopen(f"http://127.0.0.1:{self.port}/json", timeout=5)
