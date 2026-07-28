@@ -143,7 +143,37 @@ EXTRACT_JS = r"""(() => async function() {
 """
 
 
-def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60):
+def _is_sufficient(rec):
+    """返回 rec 是否拿到足够 SS 数据；不够则触发 retry。"""
+    if not rec:
+        return False
+    detail = rec.get("detail") or []
+    if len(detail) == 0:
+        return False
+    has_ss = sum(1 for a in detail if a.get("ss_brand") or a.get("ss_seller"))
+    return has_ss >= 5  # 至少 5 个 ASIN 有 SS 数据（storage bins 是 29/48）
+
+
+def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60, max_retries=3):
+    """带 retry: 若 SS 注入不充分（品牌/卖家 <30%），重新打开 tab 再抓。"""
+    import websocket
+    last_rec = None
+    for attempt in range(1, max_retries + 1):
+        log(f"  attempt {attempt}/{max_retries}")
+        rec = _fetch_srp_attempt(country, keyword, port, timeout)
+        last_rec = rec
+        if _is_sufficient(rec):
+            log(f"  ✓ attempt {attempt} SS 充分 (>=30% brand/seller)")
+            return rec
+        log(f"  ⚠ attempt {attempt} SS 不充分，重试中...")
+        if attempt < max_retries:
+            time.sleep(3)
+    log(f"  ✗ {max_retries} 次尝试后仍 SS 不充分，返回最后一次结果")
+    return last_rec
+
+
+def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
+    """单次抓取尝试（原 fetch_srp_via_cdp 主体）。"""
     import websocket
     tabs = get_tabs(port)
     if not tabs:
