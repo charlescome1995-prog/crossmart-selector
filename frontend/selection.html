@@ -517,7 +517,61 @@ function analyzeKeyword(rec) {
   const ssFullCount = detail.filter(d => d.ss_brand).length;
   // Sponsored count
   const sponsoredCount = detail.filter(d => d.sponsored).length;
-  return {avgPrice, minPrice, maxPrice, avgRating, totalReviews, topBrands, topSellers, topBsr, ssCoverage, ssFullCount, sponsoredCount, totalAsins: detail.length};
+
+  // ===== 🧠 AI 分析：6 个衍生指标 =====
+  // 1) 品牌集中度 CR3 = Top3 品牌 ASIN 数 / 总有品牌的 ASIN 数
+  const brandTotal = Object.values(brandCounts).reduce((a, b) => a + b, 0);
+  const top3BrandSum = Object.values(brandCounts).sort((a, b) => b - a).slice(0, 3).reduce((a, b) => a + b, 0);
+  const cr3 = brandTotal > 0 ? top3BrandSum / brandTotal : null;
+  // 2) 品牌垄断判定
+  let monopoly = {verdict: null, label: '—', color: '#94a3b8', emoji: ''};
+  if (cr3 !== null) {
+    if (cr3 >= 0.6)      monopoly = {verdict: 'red',    label: '红海·品牌垄断', color: '#dc2626', emoji: '🔴'};
+    else if (cr3 >= 0.3) monopoly = {verdict: 'yellow', label: '中等竞争',       color: '#ca8a04', emoji: '🟡'};
+    else                 monopoly = {verdict: 'green',  label: '机会·品牌分散', color: '#16a34a', emoji: '🟢'};
+  }
+  // 3) 价格分层（<$20 / $20-50 / >$50）
+  const priceBuckets = {low: 0, mid: 0, high: 0};
+  prices.forEach(p => {
+    if (p < 20)        priceBuckets.low++;
+    else if (p <= 50)  priceBuckets.mid++;
+    else               priceBuckets.high++;
+  });
+  // 4) FBA 渗透率 = 含 "FBA" 的 fulfillment / 抓到的 fulfillment 总数
+  const fulfillmentTotal = detail.filter(d => d.ss_fulfillment).length;
+  const fbaCount = detail.filter(d => /FBA/i.test(d.ss_fulfillment || '')).length;
+  const fbmCount = detail.filter(d => /FBM/i.test(d.ss_fulfillment || '')).length;
+  const fbaRate = fulfillmentTotal > 0 ? fbaCount / fulfillmentTotal : null;
+  // 5) 新进入者数 = 在售天数 < 90 天的 ASIN 数
+  let daysListedSample = 0, newEntrants = 0;
+  detail.forEach(d => {
+    const m = (d.ss_days_listed || '').match(/(\d+)/);
+    if (m) { daysListedSample++; if (parseInt(m[1]) < 90) newEntrants++; }
+  });
+  // 6) Sponsored 渗透率
+  const sponsoredRate = detail.length > 0 ? sponsoredCount / detail.length : 0;
+
+  return {
+    avgPrice, minPrice, maxPrice, avgRating, totalReviews,
+    topBrands, topSellers, topBsr, ssCoverage, ssFullCount, sponsoredCount, totalAsins: detail.length,
+    // AI 6 字段
+    cr3, cr3Sample: brandTotal, top3BrandSum,
+    monopoly,
+    priceBuckets, priceSample: prices.length,
+    fbaRate, fbaCount, fbmCount, fulfillmentTotal,
+    newEntrants, daysListedSample,
+    sponsoredCount, sponsoredRate
+  };
+}
+
+// helper: 数据缺失时显示 "⚠️ 数据缺失 (N/A)"
+function naCell(reason) {
+  return '<span style="color:#94a3b8;font-size:13px">⚠️ ' + reason + '</span>';
+}
+function pctCell(num, den, label) {
+  if (den === 0) return naCell('数据缺失');
+  const pct = (num / den * 100).toFixed(0);
+  return '<strong style="font-size:22px;color:#1e293b">' + pct + '%</strong><div style="font-size:12px;color:#64748b">' + num + ' / ' + den + ' ' + label + '</div>';
 }
 
 function renderKwSummary(rec, key) {
@@ -552,7 +606,60 @@ function renderKwSummary(rec, key) {
         (a.topBsr.length ? a.topBsr.map(([b, c]) => '<div style="display:flex;justify-content:space-between;font-size:14px;padding:2px 0"><span>' + b.slice(0,40) + '</span><span style="color:#64748b">' + c + ' ASIN</span></div>').join('') : '<div style="color:#94a3b8;font-size:13px">无数据</div>') +
       '</div>' +
     '</div>' +
-    '<div style="font-size:13px;font-weight:700;color:#475569;margin:6px 0 4px">📈 SellerSprite 字段覆盖 (按 ASIN 算)</div>' +
+    '<div style="font-size:14px;font-weight:700;color:#1e293b;margin:14px 0 8px;padding-top:10px;border-top:1px dashed #cbd5e1">🧠 AI 分析（基于 ASIN 衍生）</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0">' +
+      // 1) 品牌集中度 CR3
+      '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px">' +
+        '<div style="font-size:13px;color:#64748b;font-weight:600;margin-bottom:6px">🏷️ 品牌集中度 CR3</div>' +
+        '<div>' + (a.cr3 !== null ? pctCell(a.top3BrandSum, a.cr3Sample, 'ASIN') : naCell('无品牌数据')) + '</div>' +
+        (a.cr3 !== null ? '<div style="font-size:12px;color:#94a3b8;margin-top:4px">Top3 品牌占 ASIN 数比例（仅含已抓到的）</div>' : '') +
+      '</div>' +
+      // 2) 品牌垄断判定
+      '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px">' +
+        '<div style="font-size:13px;color:#64748b;font-weight:600;margin-bottom:6px">⚖️ 品牌垄断判定</div>' +
+        (a.monopoly.verdict
+          ? '<div style="font-size:18px;font-weight:700;color:' + a.monopoly.color + '">' + a.monopoly.emoji + ' ' + a.monopoly.label + '</div><div style="font-size:12px;color:#94a3b8;margin-top:4px">阈值: ≥60% 红海 · 30-60% 中等 · &lt;30% 机会</div>'
+          : naCell('无品牌数据')) +
+      '</div>' +
+      // 3) 价格分层
+      '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px">' +
+        '<div style="font-size:13px;color:#64748b;font-weight:600;margin-bottom:6px">💰 价格分层</div>' +
+        (a.priceSample > 0
+          ? '<div style="display:flex;height:18px;border-radius:4px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:6px">' +
+              '<div style="background:#22c55e;width:' + (a.priceBuckets.low / a.priceSample * 100) + '%;transition:.3s" title="< $20: ' + a.priceBuckets.low + '"></div>' +
+              '<div style="background:#eab308;width:' + (a.priceBuckets.mid / a.priceSample * 100) + '%" title="$20-50: ' + a.priceBuckets.mid + '"></div>' +
+              '<div style="background:#ef4444;width:' + (a.priceBuckets.high / a.priceSample * 100) + '%" title="> $50: ' + a.priceBuckets.high + '"></div>' +
+            '</div>' +
+            '<div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b">' +
+              '<span>🟢 &lt;$20: <strong>' + a.priceBuckets.low + '</strong></span>' +
+              '<span>🟡 $20-50: <strong>' + a.priceBuckets.mid + '</strong></span>' +
+              '<span>🔴 &gt;$50: <strong>' + a.priceBuckets.high + '</strong></span>' +
+            '</div>' +
+            '<div style="font-size:11px;color:#94a3b8;margin-top:3px">共 ' + a.priceSample + ' 个有效价格</div>'
+          : naCell('无价格数据')) +
+      '</div>' +
+      // 4) FBA 渗透率
+      '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px">' +
+        '<div style="font-size:13px;color:#64748b;font-weight:600;margin-bottom:6px">📦 FBA 渗透率</div>' +
+        '<div>' + pctCell(a.fbaCount, a.fulfillmentTotal, 'ASIN') + '</div>' +
+        (a.fulfillmentTotal > 0 ? '<div style="font-size:11px;color:#94a3b8;margin-top:3px">FBM: ' + a.fbmCount + ' · 其他: ' + (a.fulfillmentTotal - a.fbaCount - a.fbmCount) + '</div>' : '') +
+      '</div>' +
+      // 5) 新进入者数
+      '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px">' +
+        '<div style="font-size:13px;color:#64748b;font-weight:600;margin-bottom:6px">🚀 新进入者数</div>' +
+        (a.daysListedSample > 0
+          ? '<div><strong style="font-size:22px;color:' + (a.newEntrants >= 5 ? '#16a34a' : a.newEntrants >= 2 ? '#ca8a04' : '#dc2626') + '">' + a.newEntrants + '</strong> <span style="color:#64748b;font-size:13px">个 &lt; 90 天</span></div>' +
+            '<div style="font-size:11px;color:#94a3b8;margin-top:3px">基于 ' + a.daysListedSample + ' 个有上架时间数据的 ASIN</div>'
+          : naCell('ss_days_listed 未抓取')) +
+      '</div>' +
+      // 6) Sponsored 渗透率
+      '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:12px">' +
+        '<div style="font-size:13px;color:#64748b;font-weight:600;margin-bottom:6px">💵 Sponsored 渗透率</div>' +
+        '<div>' + pctCell(a.sponsoredCount, a.totalAsins, 'ASIN') + '</div>' +
+        '<div style="font-size:11px;color:#94a3b8;margin-top:3px">' + (a.sponsoredRate > 0.3 ? '⚠️ 广告烧钱红海' : a.sponsoredRate > 0.1 ? '中等广告密度' : '广告密度低') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="font-size:13px;font-weight:700;color:#475569;margin:14px 0 4px">📈 SellerSprite 字段覆盖 (按 ASIN 算)</div>' +
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0">' +
       a.ssCoverage.map(({k, count}) => {
         const label = k.replace('ss_','').replace(/_/g, ' ');
