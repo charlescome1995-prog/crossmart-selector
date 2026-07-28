@@ -106,7 +106,17 @@ EXTRACT_JS = r"""(() => async function() {
       const rating = ratingEl ? (ratingEl.getAttribute('aria-label') || ratingEl.textContent || '').trim() : '';
       const reviewsEl = card.querySelector('a.a-link-normal[href*="#customerReviews"] span, [aria-label*="ratings"]');
       const reviews = reviewsEl ? (reviewsEl.getAttribute('aria-label') || reviewsEl.textContent || '').trim() : '';
-      const sponsored = !!(card.querySelector('.s-sponsored-info, [class*=sponsored]'));
+      // Sponsored 检测：Amazon 2026 主要靠祖先节点标识（不只是子 badge）
+      let sponsored = false;
+      let _p = card.parentElement;
+      while (_p && _p !== document.body) {
+        if (_p.matches && _p.matches('[data-component-type="s-search-result-ads"], [data-ad-type], .AdHolder, [data-test-component="SearchAdSlot"]')) {
+          sponsored = true; break;
+        }
+        _p = _p.parentElement;
+      }
+      if (!sponsored && card.querySelector('.s-sponsored-info, [class*="SponsoredBadge"], .puis-sponsored-label')) sponsored = true;
+      if (!sponsored && /\bSponsored\b/i.test((card.innerText || '').slice(0, 120))) sponsored = true;
       const ssContainer = card.querySelector('[name^="seller-sprite-extension-quick-view-"]');
       const ss_text = ssContainer ? ssContainer.innerText : '';
       results.push({asin, title: title.slice(0,200), price, rating, reviews, sponsored, ss_text: ss_text.slice(0, 5000)});
