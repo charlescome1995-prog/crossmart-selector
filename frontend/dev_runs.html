@@ -32,18 +32,47 @@ body{background:#f4f7f6;color:#333;padding:0;font-size:15px}
 .run-head .stats{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
 .run-head .stat{font-size:13px;padding:3px 9px;border-radius:10px;background:#e2e8f0;color:#475569;white-space:nowrap}
 .run-head .stat strong{color:#1e293b;font-weight:700}
+.run-head .stat.ss-ok{background:#d1fae5;color:#065f46}
+.run-head .stat.ss-weak{background:#fef3c7;color:#92400e}
+.run-head .stat.ss-bad{background:#fee2e2;color:#991b1b}
 
-.run-body{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:0}
+.run-body{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:0}
 .run-body .shot{padding:14px;border-right:1px solid #e2e8f0;background:#fafafa;display:flex;align-items:flex-start;justify-content:center}
 .run-body .shot img{max-width:100%;height:auto;border:1px solid #e2e8f0;border-radius:4px;background:#fff}
 .run-body .meta{padding:14px;font-size:13px;color:#475569}
+.run-body .meta h3{font-size:13px;color:#475569;margin:10px 0 6px;padding-top:8px;border-top:1px dashed #e2e8f0}
+.run-body .meta h3:first-child{margin-top:0;padding-top:0;border-top:none}
 .run-body .meta dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
 .run-body .meta dt{color:#64748b;font-weight:600}
 .run-body .meta dd{color:#1e293b;font-size:13px;word-break:break-all}
-.run-body .meta .asin-list{font-family:ui-monospace,"Cascadia Code","Consolas",monospace;color:#0369a1;font-size:12.5px}
-.run-body .meta .title-list{margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0}
-.run-body .meta .title-list strong{display:block;color:#64748b;margin-bottom:6px;font-size:12px}
-.run-body .meta .title-list ul{margin:0;padding-left:18px;color:#334155}
+.run-body .meta .mono{font-family:ui-monospace,"Cascadia Code","Consolas",monospace;color:#0369a1;font-size:12.5px}
+.run-body .meta .tag{display:inline-block;background:#ede9fe;color:#5b21b6;padding:1px 7px;border-radius:3px;font-size:12px;margin:1px 2px}
+.run-body .meta .tag.brand{background:#fce7f3;color:#9d174d}
+.run-body .meta .tag.seller{background:#dbeafe;color:#1e40af}
+.run-body .meta .tag.bsr{background:#d1fae5;color:#065f46}
+.run-body .meta .tag.launch{background:#fed7aa;color:#9a3412}
+.run-body .meta .tag.monthly{background:#fef3c7;color:#92400e}
+.run-body .meta .tag.traffic{background:#e0e7ff;color:#3730a3}
+
+.run-body .meta .bucket-bar{display:flex;height:18px;border-radius:4px;overflow:hidden;margin:4px 0;font-size:11px;color:white;font-weight:600;line-height:18px;text-align:center}
+.run-body .meta .bucket-bar .seg{transition:flex-grow .3s}
+.run-body .meta .bucket-legend{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:#64748b;margin-top:4px}
+.run-body .meta .bucket-legend .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:middle}
+.seg-1-10{background:#16a34a}
+.seg-11-20{background:#65a30d}
+.seg-21-30{background:#ca8a04}
+.seg-31{background:#dc2626}
+.seg-none{background:#94a3b8}
+
+/* SS 字段明细表格（折叠） */
+.run-body .ss-detail{margin-top:10px;padding:10px;border-top:1px dashed #e2e8f0}
+.run-body .ss-detail summary{cursor:pointer;color:#007185;font-size:13px;font-weight:600;user-select:none}
+.run-body .ss-detail summary:hover{color:#e94560}
+.run-body .ss-detail table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.run-body .ss-detail th{background:#f1f5f9;color:#475569;text-align:left;padding:6px 8px;font-weight:600;border-bottom:1px solid #e2e8f0}
+.run-body .ss-detail td{padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#1e293b;vertical-align:top}
+.run-body .ss-detail td.asin{font-family:ui-monospace,"Cascadia Code","Consolas",monospace;color:#0369a1}
+.run-body .ss-detail tr:hover{background:#fafafa}
 
 @media (max-width:900px){.run-body{grid-template-columns:1fr}.run-body .shot{border-right:none;border-bottom:1px solid #e2e8f0}}
 
@@ -63,9 +92,9 @@ body{background:#f4f7f6;color:#333;padding:0;font-size:15px}
 <div class="container">
 
   <div class="intro">
-    <h2>🧪 Dev Runs — Selenium 单关键词抓取实测</h2>
+    <h2>🧪 Dev Runs — 复用主流程 SRP 抓取（含卖家精灵字段）</h2>
     <p>这个页面是 <code>backend/dev/asin_dev_scraper.py</code> 的运行快照。</p>
-    <p>每次跑 <code>python backend/dev/asin_dev_scraper.py --country US --keyword "..."</code> 就会追加一张卡片：真实 Amazon SRP 截屏 + 摘要（ASIN 数 / Sponsored 数 / 价格区间 / 评分 / ASIN 样本）。</p>
+    <p>每次跑：</p>
     <div class="tools">
 # 跑一个关键词抓取：
 python backend/dev/asin_dev_scraper.py --country US --keyword "storage bins"
@@ -73,7 +102,7 @@ python backend/dev/asin_dev_scraper.py --country US --keyword "storage bins"
 # 跑完产物自动镜像到 frontend/dev_runs/，push 后这里就显示：
 git add frontend/dev_runs/ && git commit -m "feat: dev scraper 截图" && git push
     </div>
-    <p style="margin-top:10px;color:#64748b;font-size:13px">⚠️ Selenium 用 Edge 临时 profile，亚马逊登录/卖家精灵插件需要手动登录一次后保留 cookies 才能拿到 SS 字段。当前脚本只验证"能跑起来打开目标页面"。</p>
+    <p style="margin-top:10px;color:#64748b;font-size:13px">✅ 走 <code>fetch_srp_via_cdp()</code> 拿卖家精灵 24 字段（品牌/卖家/BSR/月销量/上架天数/流量词…）；含 retry 兜底；summary JSON 含完整 rec，详情表格里能看每个 ASIN 的 SS 字段。</p>
   </div>
 
   <div id="runs"></div>
@@ -99,16 +128,26 @@ async function load() {
       return;
     }
     root.innerHTML = runs.map(r => renderRun(r)).join("");
+    // 异步拉完整 summary.json 渲染 SS 明细表
+    runs.forEach(r => loadDetail(r));
   } catch (e) {
     root.innerHTML = `<div class="intro"><p>❌ 加载失败：${e.message}</p><p>请确认 <code>frontend/dev_runs/index.json</code> 存在并已 push。</p></div>`;
   }
 }
 
+function ssRateClass(rate) {
+  if (rate >= 0.7) return "ss-ok";
+  if (rate >= 0.3) return "ss-weak";
+  return "ss-bad";
+}
+
 function renderRun(r) {
   const shotPath = `dev_runs/${r.base}_screenshot.png`;
-  const priceStats = r.price_min !== null
+  const priceStats = r.price_min !== null && r.price_min !== undefined
     ? `${r.price_min} - ${r.price_max} (均值 ${r.price_avg})`
     : "—";
+  const ssRate = r.asin_count > 0 ? (r.ss_injected_count / r.asin_count) : 0;
+  const ssRatePct = (ssRate * 100).toFixed(0) + "%";
 
   return `
   <div class="run-card">
@@ -120,6 +159,7 @@ function renderRun(r) {
         <span class="stat"><strong>${r.asin_count}</strong> ASINs</span>
         <span class="stat"><strong>${r.sponsored_count}</strong> Sponsored</span>
         <span class="stat">💰 ${priceStats}</span>
+        <span class="stat ${ssRateClass(ssRate)}" title="卖家精灵注入率"><strong>${r.ss_injected_count}</strong>/${r.asin_count} SS注入 (${ssRatePct})</span>
       </div>
     </div>
     <div class="run-body">
@@ -127,20 +167,102 @@ function renderRun(r) {
         <img src="${shotPath}" alt="SRP screenshot for ${escapeHtml(r.keyword)}" loading="lazy">
       </div>
       <div class="meta">
+        <h3>📊 Amazon 基础字段</h3>
         <dl>
           <dt>评分样本</dt><dd>${(r.rating_samples || []).map(x => x.toFixed(1)).join(' · ')}</dd>
-          <dt>ASIN 样本</dt><dd class="asin-list">${(r.asin_samples || []).join(', ')}</dd>
+          <dt>ASIN 样本</dt><dd class="mono">${(r.asin_samples || []).join(', ')}</dd>
+          <dt>首标题</dt><dd>${escapeHtml(r.title_first || '—')}</dd>
         </dl>
-        <div class="title-list">
-          <strong>首 5 个标题</strong>
-          <ul>
-            ${(r.title_first ? ['<li>' + escapeHtml(r.title_first) + '</li>'] : [])}
-            ${(r.asin_samples ? [] : [])}  <!-- placeholder, titles in summary.json but not in index for compactness -->
-          </ul>
+
+        <h3>🔮 卖家精灵 SS 字段</h3>
+        <dl>
+          <dt>品牌</dt><dd>${renderTags(r.brand_samples, 'brand')}</dd>
+          <dt>卖家</dt><dd>${renderTags(r.seller_samples, 'seller')}</dd>
+          <dt>BSR</dt><dd>${renderTags(r.bsr_samples, 'bsr')}</dd>
+          <dt>月销量</dt><dd>${renderTags(r.monthly_sales_samples, 'monthly')}</dd>
+          <dt>上架天数</dt><dd>${renderTags(r.launch_days_samples, 'launch')}</dd>
+          <dt>流量词数</dt><dd>${renderTags(r.traffic_samples, 'traffic')}</dd>
+          <dt>含品牌字段</dt><dd><strong>${r.ss_brand_count}</strong> / ${r.asin_count}</dd>
+          <dt>含卖家字段</dt><dd><strong>${r.ss_seller_count}</strong> / ${r.asin_count}</dd>
+          <dt>含 BSR 字段</dt><dd><strong>${r.ss_bsr_count}</strong> / ${r.asin_count}</dd>
+          <dt>含上架日期</dt><dd><strong>${r.ss_launch_count}</strong> / ${r.asin_count}</dd>
+          <dt>含月销量</dt><dd><strong>${r.ss_monthly_count}</strong> / ${r.asin_count}</dd>
+          <dt>含流量词</dt><dd><strong>${r.ss_traffic_count}</strong> / ${r.asin_count}</dd>
+          <dt>均上架天数</dt><dd><strong>${r.avg_days_listed ?? '—'}</strong></dd>
+          <dt>均流量词数</dt><dd><strong>${r.avg_traffic_words ?? '—'}</strong></dd>
+        </dl>
+
+        <h3>📍 自然位分布</h3>
+        ${renderBucketBar(r.natural_position_buckets)}
+
+        <div class="ss-detail">
+          <summary>📋 SS 字段明细（前 10 个 ASIN，点击展开）</summary>
+          <div id="detail-${r.base}"><p style="color:#94a3b8;font-size:12px;padding:6px">⏳ 加载明细…</p></div>
         </div>
       </div>
     </div>
   </div>`;
+}
+
+function renderTags(arr, cls) {
+  if (!arr || arr.length === 0) return '<span style="color:#94a3b8">—</span>';
+  return arr.map(v => `<span class="tag ${cls}">${escapeHtml(String(v))}</span>`).join('');
+}
+
+function renderBucketBar(buckets) {
+  const order = ['1-10', '11-20', '21-30', '31+', '未注入'];
+  const colors = {'1-10': 'seg-1-10', '11-20': 'seg-11-20', '21-30': 'seg-21-30',
+                  '31+': 'seg-31', '未注入': 'seg-none'};
+  const labels = {'1-10': '前10', '11-20': '11-20', '21-30': '21-30',
+                  '31+': '31+', '未注入': '未注入'};
+  const total = Object.values(buckets || {}).reduce((a, b) => a + b, 0);
+  if (total === 0) return '<p style="color:#94a3b8;font-size:12px">无数据</p>';
+  const segs = order.filter(k => (buckets[k] || 0) > 0).map(k => {
+    const n = buckets[k] || 0;
+    const pct = (n / total * 100).toFixed(1);
+    return `<div class="seg ${colors[k]}" style="flex:${n}" title="${labels[k]}: ${n} (${pct}%)">${n}</div>`;
+  }).join('');
+  const legend = order.filter(k => (buckets[k] || 0) > 0).map(k => {
+    return `<span><span class="dot ${colors[k]}"></span>${labels[k]}: ${buckets[k]}</span>`;
+  }).join('');
+  return `<div class="bucket-bar">${segs}</div><div class="bucket-legend">${legend}</div>`;
+}
+
+async function loadDetail(r) {
+  const target = document.getElementById(`detail-${r.base}`);
+  if (!target) return;
+  try {
+    const resp = await fetch(`dev_runs/${r.base}_summary.json?_=${Date.now()}`);
+    if (!resp.ok) { target.innerHTML = '<p style="color:#dc2626;font-size:12px">详情加载失败</p>'; return; }
+    const payload = await resp.json();
+    const detail = (payload.record && payload.record.detail) || [];
+    if (detail.length === 0) { target.innerHTML = '<p style="color:#94a3b8;font-size:12px">无明细</p>'; return; }
+    const rows = detail.slice(0, 10).map(a => {
+      return `<tr>
+        <td class="asin">${escapeHtml(a.asin || '')}</td>
+        <td>${escapeHtml((a.title || '').slice(0, 40))}</td>
+        <td>${a.sponsored ? '<span style="color:#e94560">是</span>' : '否'}</td>
+        <td>${escapeHtml(a.ss_brand || '—')}</td>
+        <td>${escapeHtml((a.ss_seller || '').slice(0, 16))}</td>
+        <td>${escapeHtml(a.ss_bsr_main || '—')}</td>
+        <td>${escapeHtml(a.ss_monthly_sales_parent || '—')}</td>
+        <td>${escapeHtml(a.ss_days_listed || '—')}</td>
+        <td>${escapeHtml(a.ss_all_traffic_words || '—')}</td>
+      </tr>`;
+    }).join('');
+    target.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>ASIN</th><th>标题</th><th>广告</th>
+          <th>品牌</th><th>卖家</th><th>BSR</th>
+          <th>月销量</th><th>上架天数</th><th>流量词</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="color:#94a3b8;font-size:11px;margin-top:6px">显示前 10 个 / 共 ${detail.length} 个 ASIN</p>`;
+  } catch (e) {
+    target.innerHTML = `<p style="color:#dc2626;font-size:12px">详情加载失败: ${e.message}</p>`;
+  }
 }
 
 function escapeHtml(s) {

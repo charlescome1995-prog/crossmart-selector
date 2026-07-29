@@ -1,13 +1,198 @@
 {
   "runs": [
     {
+      "base": "US_storage_bins_20260729_082226",
+      "country": "US",
+      "keyword": "storage bins",
+      "scraped_at": "2026-07-29T08:22:27",
+      "asin_count": 60,
+      "sponsored_count": 12,
+      "price_min": 9.99,
+      "price_max": 199.99,
+      "price_avg": 49.48,
+      "rating_samples": [
+        4.7,
+        4.8,
+        4.5,
+        4.4,
+        4.5
+      ],
+      "asin_samples": [
+        "B0GH9325VG",
+        "B0GYF91BXB",
+        "B082VWSMCB",
+        "B0DMVX69PW",
+        "B0H3KSXC25"
+      ],
+      "title_first": "Sterilite Industrial Storage Tote with Lids for Garage, 27 Gallon, 4-Pack | Heav",
+      "ss_injected_count": 0,
+      "ss_brand_count": 0,
+      "ss_seller_count": 0,
+      "ss_bsr_count": 0,
+      "ss_launch_count": 0,
+      "ss_monthly_count": 0,
+      "ss_traffic_count": 0,
+      "avg_days_listed": null,
+      "avg_traffic_words": null,
+      "natural_position_buckets": {},
+      "brand_samples": [],
+      "seller_samples": [],
+      "bsr_samples": [],
+      "monthly_sales_samples": [],
+      "launch_days_samples": [],
+      "traffic_samples": []
+    },
+    {
+      "base": "US_shea_butter_20260729_110149",
+      "country": "US",
+      "keyword": "shea butter",
+      "scraped_at": "2026-07-29T11:01:49",
+      "asin_count": 48,
+      "sponsored_count": 0,
+      "price_min": 6.99,
+      "price_max": 69.98,
+      "price_avg": 22.2,
+      "rating_samples": [
+        4.7,
+        4.5,
+        4.7,
+        4.6,
+        4.6
+      ],
+      "asin_samples": [
+        "B01C4QBXA8",
+        "B0DR7SBV9Z",
+        "B0013UQQAE",
+        "B07KPKYVVV",
+        "B0DQGZ3BZY"
+      ],
+      "title_first": "Yellow Brick Road 100% Raw Unrefined Shea Butter-African Grade a Ivory 1 Pound (",
+      "ss_injected_count": 48,
+      "ss_brand_count": 48,
+      "ss_seller_count": 48,
+      "ss_bsr_count": 48,
+      "ss_launch_count": 47,
+      "ss_monthly_count": 48,
+      "ss_traffic_count": 48,
+      "avg_days_listed": 3003,
+      "avg_traffic_words": 172,
+      "natural_position_buckets": {
+        "1-10": 48,
+        "11-20": 0,
+        "21-30": 0,
+        "31+": 0,
+        "未注入": 0
+      },
+      "brand_samples": [
+        "Yellow Brick Road",
+        "APUUFYQC",
+        "Palmer's"
+      ],
+      "seller_samples": [
+        "YELLOW BRICK ROAD",
+        "BZAZXM USHK",
+        "Amazon"
+      ],
+      "bsr_samples": [
+        "2,686 in Beauty & Personal Care",
+        "7,405 in Beauty & Personal Care",
+        "4,036 in Beauty & Personal Care"
+      ],
+      "monthly_sales_samples": [
+        "8,168",
+        "1,686",
+        "5,307"
+      ],
+      "launch_days_samples": [
+        "3600",
+        "558",
+        "4759"
+      ],
+      "traffic_samples": [
+        "282",
+        "259",
+        "547"
+      ]
+    },
+    {
+      "base": "US_essence_nose_ring_diffuser_20260729_092554",
+      "country": "US",
+      "keyword": "essence nose ring diffuser",
+      "scraped_at": "2026-07-29T09:25:54",
+      "asin_count": 50,
+      "sponsored_count": 2,
+      "price_min": 6.49,
+      "price_max": 54.99,
+      "price_avg": 23.01,
+      "rating_samples": [
+        4.2,
+        4.2,
+        4.3,
+        4.4,
+        4.4
+      ],
+      "asin_samples": [
+        "B09889V6Y6",
+        "B09889V6Y6",
+        "B0988BWLD3",
+        "B0F27WZD2F",
+        "B0DVLG9M42"
+      ],
+      "title_first": "Essence Nasal Diffuser Starter Kit – Essential Oil Silicone Nose Ring Inhalers f",
+      "ss_injected_count": 50,
+      "ss_brand_count": 50,
+      "ss_seller_count": 50,
+      "ss_bsr_count": 50,
+      "ss_launch_count": 42,
+      "ss_monthly_count": 50,
+      "ss_traffic_count": 50,
+      "avg_days_listed": 634,
+      "avg_traffic_words": 87,
+      "natural_position_buckets": {
+        "1-10": 48,
+        "11-20": 0,
+        "21-30": 0,
+        "31+": 0,
+        "未注入": 2
+      },
+      "brand_samples": [
+        "HONÉ",
+        "HONÉ",
+        "HONÉ"
+      ],
+      "seller_samples": [
+        "Epic Global",
+        "Epic Global",
+        "Epic Global"
+      ],
+      "bsr_samples": [
+        "7,063 in Health & Household",
+        "7,063 in Health & Household",
+        "7,063 in Health & Household"
+      ],
+      "monthly_sales_samples": [
+        "5,686",
+        "5,686",
+        "5,686"
+      ],
+      "launch_days_samples": [
+        "1854",
+        "1854",
+        "1853"
+      ],
+      "traffic_samples": [
+        "183",
+        "183",
+        "264"
+      ]
+    },
+    {
       "base": "US_essence_nose_ring_diffuser_20260729_081938",
       "country": "US",
       "keyword": "essence nose ring diffuser",
       "scraped_at": "2026-07-29T08:19:38",
       "asin_count": 50,
       "sponsored_count": 2,
-      "title_first": "Essence Nasal Diffuser Starter Kit – Essential Oil Silicone Nose Ring Inhalers f",
       "price_min": 6.49,
       "price_max": 54.99,
       "price_avg": 22.21,
@@ -24,7 +209,24 @@
         "B0988BWLD3",
         "B0F27WZD2F",
         "B0DVLG9M42"
-      ]
+      ],
+      "title_first": "Essence Nasal Diffuser Starter Kit – Essential Oil Silicone Nose Ring Inhalers f",
+      "ss_injected_count": 0,
+      "ss_brand_count": 0,
+      "ss_seller_count": 0,
+      "ss_bsr_count": 0,
+      "ss_launch_count": 0,
+      "ss_monthly_count": 0,
+      "ss_traffic_count": 0,
+      "avg_days_listed": null,
+      "avg_traffic_words": null,
+      "natural_position_buckets": {},
+      "brand_samples": [],
+      "seller_samples": [],
+      "bsr_samples": [],
+      "monthly_sales_samples": [],
+      "launch_days_samples": [],
+      "traffic_samples": []
     }
   ]
 }
