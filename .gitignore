@@ -3,3 +3,10 @@ __pycache__/
 *.pyo
 .DS_Store
 backend/dev/test_output/
+
+# Excel 输入 + 引擎中间产物（每次跑重新生成）
+backend/data/
+backend/processed/
+
+# 备份归档
+frontend/data/_archive/
