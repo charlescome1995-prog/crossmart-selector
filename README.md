@@ -11,16 +11,21 @@
 
 1. 从卖家精灵导出关键词 Excel（字段同 `1Amazon关键词_YYYYMMDD.xlsx`），放 `backend/data/input/`
 2. Edge 浏览器已打开 + 卖家精灵扩展已加载（每次新开会话需手动登一次卖家精灵账号）
-3. 跑一条命令：
+3. 跑一条命令（一键端到端 = Part A 卡数据 + Part A+ 浏览器抓 + Part B 4 桶）：
    ```powershell
    cd crossmart-selector
-   python backend/run_selection.py
+   python backend/run_all.py
    ```
-   这会跑 Part A（quick_filter → triage）+ Part A+（启浏览器抓 Amazon SRP，含卖家精灵 24 字段）+ Part B（strategy_router 4 桶分流）
+   可选环境变量：
+   - `set PART_A_PLUS=0`           跳过浏览器抓（只跑离线分析，10 秒）
+   - `set PART_A_PLUS_MAX_ASINS=10` 每个关键词只抓 10 个 ASIN（默认 20）
+   - `set PUSH_HUB=0`              跳过 crossmart-hub 同步
+
 4. 写出的 JSON：
-   - `frontend/data/triage.json`          48 条三档清单
-   - `frontend/data/keyword_asins.json`   Part A+ 抓到的 ASIN 详情（每个关键词前 20 条）
+   - `frontend/data/triage.json`          48 条三档清单（🟢🟡🔴）
    - `frontend/data/strategy.json`        4 桶推品策略（🟢🟡 候选按 评分数 × 广告竞品数 分桶）
+   - `frontend/data/keyword_asins.json`   Part A+ 抓到的 ASIN 详情（含卖家精灵 24 字段）
+   - `frontend/data/selection-data.json`  全部候选打分备份
 5. 推送部署：
    ```powershell
    git add -A; git commit -m "data: 本周选品 YYYYMMDD"; git push
