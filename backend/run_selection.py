@@ -419,14 +419,21 @@ def run():
             print(f'  Part A+ 完成: {ok_n}/{len(results)} 充分, {total_asins} 个 ASIN')
             try:
                 os.makedirs(os.path.dirname(KEYWORD_ASINS_JSON), exist_ok=True)
+                # 前端 (selection.html loadAsins) 读 keyword_asins.json.records[country::keyword]
+                # 这里同时写 records (dict by 'country::keyword') 和 items (list)，方便两端消费
+                records = {
+                    (r['country'] + '::' + r['keyword']): r.get('rec') or {}
+                    for r in results
+                }
                 with open(KEYWORD_ASINS_JSON, 'w', encoding='utf-8') as f:
                     json.dump(
                         {
-                            'schema_version': 'keyword_asins.v1',
+                            'schema_version': 'keyword_asins.v2',
                             'generated_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                             'source_excel': os.path.basename(excel),
                             'count': len(results),
                             'ok_count': ok_n,
+                            'records': records,
                             'items': results,
                         },
                         f, ensure_ascii=False, indent=2,

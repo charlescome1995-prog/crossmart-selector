@@ -771,9 +771,12 @@ function toggleExpand(key) {
     if (!expandRow.dataset.loaded) {
       const [country, ...kwParts] = key.split('::');
       const kw = kwParts.join('::');
-      // key 在 data-kw 里被 &quot; 编码过, 用 _asins.records 按真实 key 找
-      const realKey = Object.keys(_asins.records).find(k => k === country + '::' + kw) || (country + '::' + kw);
-      const rec = _asins.records[realKey] || _asins.records[key] || null;
+      // key 在 data-kw 里被 &quot; 编码过, 反转义后去 _asins.records 找真实 key
+      const unescapedKey = key.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+      const [rcountry, ...rkwParts] = unescapedKey.split('::');
+      const rkw = rkwParts.join('::');
+      const realKey = rcountry + '::' + rkw;
+      const rec = _asins.records[realKey] || null;
       const td = expandRow.querySelector('td');
       if (rec) td.innerHTML = renderExpandRowHtml(rec);
       else td.innerHTML = '<div style="padding:20px;color:#94a3b8">⚠️ 未找到 ASIN 记录: ' + escapeHtml(realKey) + '</div>';
