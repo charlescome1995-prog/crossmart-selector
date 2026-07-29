@@ -22,7 +22,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 import pandas as pd
 import numpy as np
 
-from config import RAW_DATA_DIR, STRATEGY_CONFIG
+from config import RAW_DATA_DIR
 try:
     from config import FUNCTIONAL_KEYWORDS, PRIORITY_BONUS
 except ImportError:
@@ -32,12 +32,16 @@ from selectors.product_selector import (
     check_16_indicators,
     calculate_profit_margin,
     calculate_profit_per_unit,
-    check_strategy_match,
     is_seasonal,
     is_trending,
     get_category_priority,
     analyze_5w1h_scene,
 )
+
+# ── Part A+ 浏览器抓取（2026-07-29 新增：复用 fetch_keyword_asins 主流程）──
+KEYWORD_ASINS_JSON = os.path.join(_THIS, '..', 'frontend', 'data', 'keyword_asins.json')
+PART_A_PLUS_ENABLED = os.environ.get('PART_A_PLUS', '1') == '1'   # 默认开启；不想跑设 PART_A_PLUS=0
+PART_A_PLUS_MAX_ASINS = int(os.environ.get('PART_A_PLUS_MAX_ASINS', '20'))
 
 # 兼容新旧两种关键词列名
 KW_COL = '关键词(绿色建议进入，黄色找切入点，粉色观察)'
@@ -48,13 +52,8 @@ def _resolve_kw_col(df):
     return KW_COL
 OUTPUT_JSON = os.path.join(_THIS, '..', 'frontend', 'data', 'selection-data.json')
 
-# 策略英文名 → 前端标签
-STRATEGY_LABEL = {
-    'strategy1_blue_ocean': '蓝海',
-    'strategy2_red_ocean': '红海',
-    'strategy3_differentiation': '差异化',
-    'strategy4_follow': '跟随',
-}
+# 4 策略标签已废弃：替换为 4 桶（见 backend/selectors/strategy_router.py）
+# STRATEGY_LABEL 已删
 
 
 def find_latest_excel():
@@ -308,34 +307,10 @@ def run():
         df = df[~bl_mask].reset_index(drop=True)
         print(f'   过滤黑名单类目后: {len(df):,}（剔除 {before - len(df):,} 条）')
 
-    # 4 策略筛选
-    print('\n执行 4 策略筛选...')
-    all_selected = []
-    seen = set()
-    strategy_keys = ['strategy1_blue_ocean', 'strategy2_red_ocean',
-                     'strategy3_differentiation', 'strategy4_follow']
-    for key in strategy_keys:
-        cfg = STRATEGY_CONFIG[key]
-        quota = cfg.get('quota', 30)
-        filtered = df[df.apply(lambda r: check_strategy_match(r, key), axis=1)]
-        filtered = filtered[~filtered[KW_COL].isin(seen)]
-        filtered = filtered.sort_values('rank_change', ascending=False).head(quota)
-        if len(filtered) > 0:
-            f = filtered.copy()
-            f['_strategy_key'] = key
-            all_selected.append(f)
-            seen.update(f[KW_COL].tolist())
-        print(f'  {STRATEGY_LABEL[key]}: {len(filtered)}/{quota}')
-
-    if not all_selected:
-        print('⚠️  策略筛选结果为空，输出空数据集')
-        df_final = df.head(0).copy()
-        df_final['_strategy_key'] = []
-    else:
-        df_final = pd.concat(all_selected, ignore_index=True)
-        max_quota = STRATEGY_CONFIG.get('total_quota', 100)
-        if len(df_final) > max_quota:
-            df_final = df_final.head(max_quota)
+    # 4 策略筛选已废弃：替换为 4 桶（Part B 推品策略见 strategy_router.py）
+    # 这里直接拿全部候选（无 quota 限制），后续 Part A+ 与 Part B 处理
+    print('\n4 策略筛选已废弃，候选全量进入 Part A+（浏览器抓取） + Part B（4 桶分流）')
+    df_final = df.copy().reset_index(drop=True)
 
     # 逐行分析 → 组装 JSON
     products = []
@@ -378,7 +353,6 @@ def run():
             'keyword': keyword,
             'url': str(row.get('网址', '')) if pd.notna(row.get('网址', '')) else '',
             'category': str(row.get('品类组', '')) if pd.notna(row.get('品类组', '')) else '',
-            'strategy': STRATEGY_LABEL.get(row.get('_strategy_key', ''), ''),
             'score': score,
             'margin': margin,
             'profit': profit,
@@ -410,11 +384,62 @@ def run():
     # 按评分降序
     products.sort(key=lambda x: x['score'], reverse=True)
 
+    # ══════════════════════════════════════════════════════════════════
+    # Part A+ 浏览器补抓：对 Excel 候选里的关键词启 Edge+卖家精灵抓 ASIN
+    # 2026-07-29 新增 — 复用 fetch_keyword_asins 主流程
+    # 关闭：PART_A_PLUS=0 python backend/run_selection.py
+    # ══════════════════════════════════════════════════════════════════
+    if PART_A_PLUS_ENABLED and len(df) > 0:
+        try:
+            from selectors.fetch_keyword_asins import fetch_keywords_batch
+        except ImportError as e:
+            print(f'⚠️ Part A+ 跳过：fetch_keyword_asins 导入失败（{e}）')
+        else:
+            # 取月搜 Top 50 去重（避免几百条全抓几个小时）
+            kw_col_local = '关键词' if '关键词' in df.columns else KW_COL
+            top = (
+                df[['_country', kw_col_local, '20260113月搜']]
+                .dropna()
+                .drop_duplicates(subset=[kw_col_local, '_country'])
+                .sort_values('20260113月搜', ascending=False)
+                .head(50)
+            )
+            items = [
+                {'country': str(r['_country']), 'keyword': str(r[kw_col_local])}
+                for _, r in top.iterrows()
+            ]
+            print(f'\n═══ Part A+ 浏览器补抓 {len(items)} 条 (max_asins={PART_A_PLUS_MAX_ASINS}/条) ═══')
+            try:
+                results = fetch_keywords_batch(items, max_asins_per_kw=PART_A_PLUS_MAX_ASINS)
+            except Exception as e:
+                print(f'⚠️ Part A+ 整体失败（不阻塞主流程）: {e}')
+                results = []
+            ok_n = sum(1 for r in results if r.get('rec', {}).get('ok'))
+            total_asins = sum(r.get('rec', {}).get('asin_count', 0) for r in results)
+            print(f'  Part A+ 完成: {ok_n}/{len(results)} 充分, {total_asins} 个 ASIN')
+            try:
+                os.makedirs(os.path.dirname(KEYWORD_ASINS_JSON), exist_ok=True)
+                with open(KEYWORD_ASINS_JSON, 'w', encoding='utf-8') as f:
+                    json.dump(
+                        {
+                            'schema_version': 'keyword_asins.v1',
+                            'generated_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                            'source_excel': os.path.basename(excel),
+                            'count': len(results),
+                            'ok_count': ok_n,
+                            'items': results,
+                        },
+                        f, ensure_ascii=False, indent=2,
+                    )
+                print(f'  📤 Part A+ 写出: {KEYWORD_ASINS_JSON}')
+            except Exception as e:
+                print(f'  ⚠️ Part A+ JSON 写盘失败: {e}')
+
     out = {
         'generated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'source_file': ', '.join([os.path.basename(e) for e in excels]),
         'total': len(products),
-        'strategy_dist': _dist(products, 'strategy'),
+        'strategy_dist': {},  # 4 策略已废弃，分布统计改在 strategy.json.buckets 里
         'products': products,
     }
 
@@ -448,7 +473,7 @@ def run():
                 {
                     'keyword': p['keyword'],
                     'country': p.get('country', ''),
-                    'strategy': p.get('strategy', ''),
+                    'strategy': '',  # 4 策略已废弃（4 桶见 strategy.json）
                     'score': p['score'],
                     'margin': p.get('margin'),
                     'price': p.get('price'),

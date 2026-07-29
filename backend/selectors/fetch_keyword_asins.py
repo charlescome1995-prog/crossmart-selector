@@ -89,10 +89,8 @@ def get_tabs(port=EDGE_CDP_PORT):
         return []
 
 
-EXTRACT_JS = r"""(() => async function() {
-  const timeout = setTimeout(() => { extractData(); }, 60000);
+EXTRACT_JS = r"""(() => {
   function extractData() {
-    clearTimeout(timeout);
     const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
     const results = [];
     for (const card of cards) {
@@ -123,23 +121,11 @@ EXTRACT_JS = r"""(() => async function() {
     }
     return results;
   }
-  const initial = document.querySelectorAll('[name^="seller-sprite-extension-quick-view-"]').length;
-  if (initial >= 20) return extractData();
-  return new Promise((resolve) => {
-    function checkReady() {
-      const ssEls = document.querySelectorAll('[name^="seller-sprite-extension-quick-view-"]');
-      if (ssEls.length < 20) return false;
-      let maxLen = 0;
-      for (const e of ssEls) if (e.innerText.length > maxLen) maxLen = e.innerText.length;
-      return maxLen > 200;
-    }
-    if (checkReady()) { resolve(extractData()); return; }
-    const obs = new MutationObserver(() => {
-      if (checkReady()) { obs.disconnect(); resolve(extractData()); }
-    });
-    obs.observe(document.body, {childList: true, subtree: true, characterData: true});
-  });
-}
+  // 不等 MutationObserver（它监听不到 innerText）：SS 已经由 _fetch_srp_attempt
+  // 的 Phase 3/4 滚动+等待保证了（maxLen>=500）。
+  // 直接 extract。
+  return extractData();
+})()
 """
 
 
@@ -219,36 +205,69 @@ def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
             break
         time.sleep(1)
         waited += 1000
-    # Phase 2: scroll to trigger lazy-load
-    for y in range(0, 5500, 300):
-        cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, " + str(y) + ")"}, t=3)
-        time.sleep(0.3)
-    cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
-    # Phase 3: wait for SellerSprite injection (up to 30s)
-    waited = 0
-    while waited < 15000:
-        ev = cmd("Runtime.evaluate", {"expression": "(() => document.querySelectorAll(String.fromCharCode(91,93)).length)"}, t=5)
-        n = ev.get("result", {}).get("value", 0)
-        if isinstance(n, int) and n >= 20:
-            break
-        time.sleep(1)
-        waited += 1000
-    # Phase 4: extra wait for SS to fully inject data into containers (up to 20s)
-    waited = 0
-    while waited < 10000:
-        ev = cmd("Runtime.evaluate", {"expression": "(() => { const els = document.querySelectorAll(chr(34) + chr(34) + chr(34) + chr(34) + chr(34) + chr(34) + chr(34) + chr(34)).length}"}, t=5)
-
-        v = ev.get("result", {}).get("value", {})
-        if v.get("maxLen", 0) >= 300:
-            break
-        time.sleep(1)
-        waited += 1000
-    # scroll to trigger lazy-load SS
-    for y in range(0, 5500, 300):
+    # ── Phase 2: scroll 触发 lazy-load ──
+    # 卖家精灵是 IntersectionObserver 触发，每个 product card 滚到视口才注入 SS 容器。
+    # 每段睡 1.5s 让 SS 真注入完，再滚下一段。
+    SS_SELECTOR = '[name^="seller-sprite-extension-quick-view-"]'
+    SCROLL_STEP = 250
+    SCROLL_SLEEP = 1.5
+    for y in range(0, 6000, SCROLL_STEP):
         cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"}, t=3)
-        time.sleep(0.3)
+        time.sleep(SCROLL_SLEEP)
     cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
-    time.sleep(8)  # wait for SS to fully inject on visible cards
+    time.sleep(2)
+
+    # ── Phase 3: 等 SS 容器数量 ≥20 ──
+    waited = 0
+    ss_n = 0
+    while waited < 30000:
+        ev = cmd("Runtime.evaluate", {
+            "expression": f"(() => document.querySelectorAll('{SS_SELECTOR}').length)()",
+            "returnByValue": True,
+        }, t=5)
+        ss_n = ev.get("result", {}).get("value", 0)
+        if isinstance(ss_n, int) and ss_n >= 20:
+            log(f"  ✓ Phase 3: SS 容器 {ss_n} 个")
+            break
+        time.sleep(1)
+        waited += 1000
+    if ss_n < 20:
+        log(f"  ⚠ Phase 3: 30s 后 SS 容器只 {ss_n} 个（继续）")
+
+    # ── Phase 4: 等 SS 容器 innerText 长度 ≥500（说明 24 字段真注入了）──
+    # 注意：必须 returnByValue=True，否则 dict 返回 RemoteObject，value=空 {}
+    waited = 0
+    ss_max_len = 0
+    while waited < 25000:
+        ev = cmd("Runtime.evaluate", {
+            "expression": (
+                "(() => {"
+                f"  const els = document.querySelectorAll('{SS_SELECTOR}');"
+                "  let max = 0;"
+                "  for (const e of els) { if ((e.innerText||'').length > max) max = (e.innerText||'').length; }"
+                "  return {n: els.length, maxLen: max};"
+                "})()"
+            ),
+            "returnByValue": True,
+        }, t=5)
+        v = ev.get("result", {}).get("value", {})
+        if not isinstance(v, dict):
+            v = {}
+        ss_max_len = v.get("maxLen", 0)
+        if ss_max_len >= 500:
+            log(f"  ✓ Phase 4: SS maxLen={ss_max_len}（24 字段已注入）")
+            break
+        time.sleep(1)
+        waited += 1000
+    if ss_max_len < 500:
+        log(f"  ⚠ Phase 4: 25s 后 SS maxLen={ss_max_len}（继续）")
+
+    # ── Phase 5: 再滚一次确保底部卡片也被注入 ──
+    for y in range(0, 6000, SCROLL_STEP):
+        cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"}, t=3)
+        time.sleep(SCROLL_SLEEP)
+    cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
+    time.sleep(5)  # 让 SS 最后一次注入完成
 
     result = cmd("Runtime.evaluate", {"expression": EXTRACT_JS, "returnByValue": True, "awaitPromise": True})
     val = result.get("result", {}).get("value")
@@ -259,7 +278,8 @@ def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
     for a in val:
         ss_text = a.get("ss_text", "")
         ss = parse_ss_text(ss_text)
-        ss["ss_has_ss"] = bool(ss_text)
+        # parse_ss_text 返回的 dict key 已经是带 ss_ 前缀的（如 ss_brand, ss_seller），
+        # 直接展开 + 标 has_ss
         flat = {
             "asin": a.get("asin"),
             "title": a.get("title"),
@@ -267,31 +287,9 @@ def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
             "rating": a.get("rating"),
             "reviews": a.get("reviews"),
             "sponsored": a.get("sponsored"),
-            "ss_brand": ss.get("brand", ""),
-            "ss_seller": ss.get("seller", ""),
-            "ss_fulfillment": ss.get("fulfillment", ""),
-            "ss_seller_count": ss.get("seller_count", ""),
-            "ss_natural_position": ss.get("natural_position", ""),
-            "ss_bsr_main": ss.get("bsr_main", ""),
-            "ss_bsr_sub": ss.get("bsr_sub", ""),
-            "ss_monthly_sales_parent": ss.get("monthly_sales_parent", ""),
-            "ss_monthly_sales_child": ss.get("monthly_sales_child", ""),
-            "ss_revenue": ss.get("revenue", ""),
-            "ss_fba_fee": ss.get("fba_fee", ""),
-            "ss_margin": ss.get("margin", ""),
-            "ss_variants": ss.get("variants", ""),
-            "ss_price": ss.get("ss_price", ""),
-            "ss_rating": ss.get("ss_rating", ""),
-            "ss_review_count": ss.get("ss_review_count", ""),
-            "ss_delivery_days": ss.get("delivery_days", ""),
-            "ss_prime_days": ss.get("prime_days", ""),
-            "ss_launch_date": ss.get("launch_date", ""),
-            "ss_days_listed": ss.get("days_listed", ""),
-            "ss_all_traffic_words": ss.get("all_traffic_words", ""),
-            "ss_organic_keywords": ss.get("organic_keywords", ""),
-            "ss_ad_keywords": ss.get("ad_keywords", ""),
-            "ss_suggest_keywords": ss.get("suggest_keywords", ""),
-            "ss_has_ss": ss.get("has_ss", False),
+            "ss_has_ss": bool(ss_text),
+            # 直接合并 parse_ss_text 输出（key 形如 ss_brand / ss_seller）
+            **ss,
         }
         detail.append(flat)
     return {
@@ -357,6 +355,91 @@ def parse_ss_text(ss_text):
             out["ss_review_count"] = rm.group(2)
         else:
             out["ss_rating"] = inner
+    return out
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 顶层包装：run_selection.py Part A+ 调用入口
+# ══════════════════════════════════════════════════════════════════════════
+def fetch_keyword_via_cdp(country, keyword, max_asins=20, port=EDGE_CDP_PORT, timeout=60, max_retries=3):
+    """
+    抓一个关键词的 Amazon SRP（带卖家精灵），返回标准 rec。
+
+    Args:
+        country: "US"/"UK"/"DE"/"CA"
+        keyword: 关键词原始字符串（含空格）
+        max_asins: 截断 detail 到多少条（默认 20；Part A+ 不需要 50 条）
+        port: Edge CDP 端口
+        timeout/ max_retries: 透传给 fetch_srp_via_cdp
+
+    Returns:
+        dict {country, keyword, asin_count, asin_list, detail, fetched_at, ok, error?}
+        - ok=True  表示 _is_sufficient() 通过
+        - ok=False 表示 SS 不充分但尽力抓了；error 表示完全失败
+    """
+    try:
+        rec = fetch_srp_via_cdp(country, keyword, port=port, timeout=timeout, max_retries=max_retries)
+    except Exception as e:
+        log(f"  ✗ fetch_srp_via_cdp 异常: {e}")
+        return {
+            "country": country, "keyword": keyword,
+            "asin_count": 0, "asin_list": [], "detail": [],
+            "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "ok": False, "error": str(e),
+        }
+    if not rec:
+        return {
+            "country": country, "keyword": keyword,
+            "asin_count": 0, "asin_list": [], "detail": [],
+            "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "ok": False, "error": "no_rec",
+        }
+    # 截断到 max_asins
+    detail = rec.get("detail") or []
+    if len(detail) > max_asins:
+        detail = detail[:max_asins]
+    return {
+        "country": country, "keyword": keyword,
+        "asin_count": len(detail),
+        "asin_list": [a["asin"] for a in detail],
+        "detail": detail,
+        "fetched_at": rec.get("fetched_at", time.strftime("%Y-%m-%dT%H:%M:%S")),
+        "ok": _is_sufficient({"detail": detail}),
+    }
+
+
+def fetch_keywords_batch(items, max_asins_per_kw=20, keep_browser=False):
+    """
+    批量抓取：对 items 里每条 (country, keyword) 调 fetch_keyword_via_cdp。
+
+    Args:
+        items: [{country, keyword, ...}, ...]  任意带 country/keyword 字段的对象
+        max_asins_per_kw: 每关键词最多抓几条 ASIN
+        keep_browser: 是否最后保留浏览器（默认 False 关闭）
+
+    Returns:
+        [{country, keyword, rec (含 ok/error), tier, rank}, ...]
+    """
+    log(f"═══ 批量抓取 {len(items)} 条 🟢🟡 ═══")
+    if not start_edge_cdp():
+        log("Edge CDP 启动失败，整批返回空")
+        return [
+            {**it, "rec": {"ok": False, "error": "edge_start_failed", "asin_count": 0, "detail": []}}
+            for it in items
+        ]
+    out = []
+    for idx, it in enumerate(items, 1):
+        country = it["country"]
+        keyword = it["keyword"]
+        log(f"[{idx}/{len(items)}] {country} / {keyword}")
+        rec = fetch_keyword_via_cdp(country, keyword, max_asins=max_asins_per_kw)
+        out.append({**it, "rec": rec})
+        log(f"  ✓ asin_count={rec['asin_count']} ok={rec['ok']}")
+    if not keep_browser:
+        try:
+            subprocess.run("taskkill /F /IM msedge.exe", shell=True, capture_output=True)
+        except Exception:
+            pass
     return out
 
 

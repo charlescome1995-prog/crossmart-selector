@@ -11,15 +11,12 @@
 6. 非季节性
 7. 市场深度（前3<60%）
 
-4种策略:
-  策略1_蓝海策略: 小众市场、低竞争、高利润
-  策略2_红海策略: 成熟大市场、高销量
-  策略3_差异化策略: 细分市场、有改进空间
-  策略4_跟随策略: 已验证市场、稳定收益
+4 桶（Part B 推品策略）定义在 backend/selectors/strategy_router.py。
+本模块只做 16 指标检测 + 5W1H 场景还原，不再做策略分流（已迁移到 4 桶）。
 
 用法:
-  cd 1data_cl_selection
-  python product_selector.py
+  cd backend
+  python run_selection.py    # 主入口
 """
 import sys
 import os
@@ -38,7 +35,7 @@ import numpy as np
 from datetime import datetime
 import json
 
-from config import RAW_DATA_DIR, OUTPUT_DIR, STRATEGY_CONFIG, SELECTION_RULES, PROFIT_MODEL, BASE_DIR
+from config import RAW_DATA_DIR, OUTPUT_DIR, SELECTION_RULES, PROFIT_MODEL, BASE_DIR
 
 
 # ============================================================
@@ -583,131 +580,8 @@ def simple_keyword_analysis(keyword):
 # 筛选函数
 # ============================================================
 
-def check_strategy_match(row, strategy_key):
-    """检查产品是否符合策略条件"""
-    cfg = STRATEGY_CONFIG[strategy_key]
-    
-    # 排名检查
-    rank_earliest = row.get('rank_earliest', 0)
-    rank_latest = row.get('rank_latest', 0)
-    rank_change_rate = row.get('rank_change_rate', 0)
-    
-    if 'rank_earliest' in cfg:
-        if 'min' in cfg['rank_earliest'] and rank_earliest < cfg['rank_earliest']['min']:
-            return False
-        if 'max' in cfg['rank_earliest'] and rank_earliest > cfg['rank_earliest']['max']:
-            return False
-    
-    if 'rank_latest' in cfg:
-        if 'min' in cfg['rank_latest'] and rank_latest < cfg['rank_latest']['min']:
-            return False
-        if 'max' in cfg['rank_latest'] and rank_latest > cfg['rank_latest']['max']:
-            return False
-    
-    if 'rank_change_rate' in cfg:
-        if 'min' in cfg['rank_change_rate'] and rank_change_rate < cfg['rank_change_rate']['min']:
-            return False
-        if 'max' in cfg['rank_change_rate'] and rank_change_rate > cfg['rank_change_rate']['max']:
-            return False
-    
-    # 市场特征检查
-    monthly_search = row.get('20260113月搜', 0)
-    if 'monthly_search' in cfg:
-        if 'min' in cfg['monthly_search'] and monthly_search < cfg['monthly_search']['min']:
-            return False
-        if 'max' in cfg['monthly_search'] and monthly_search > cfg['monthly_search']['max']:
-            return False
-    
-    monthly_purchase = row.get('月购', 0)
-    if 'monthly_purchase' in cfg:
-        if 'min' in cfg['monthly_purchase'] and monthly_purchase < cfg['monthly_purchase']['min']:
-            return False
-        if 'max' in cfg['monthly_purchase'] and monthly_purchase > cfg['monthly_purchase']['max']:
-            return False
-    
-    product_count = row.get('广告竞品数', 0)
-    if 'product_count' in cfg:
-        if 'max' in cfg['product_count'] and product_count > cfg['product_count']['max']:
-            return False
-        if 'min' in cfg['product_count'] and product_count < cfg['product_count']['min']:
-            return False
-    
-    # 竞争特征检查
-    conversion_conc = row.get('转化集中度', 0)
-    if 'conversion_concentration' in cfg:
-        if 'min' in cfg['conversion_concentration'] and conversion_conc < cfg['conversion_concentration']['min']:
-            return False
-        if 'max' in cfg['conversion_concentration'] and conversion_conc > cfg['conversion_concentration']['max']:
-            return False
-    
-    click_conc = row.get('点击集中度', 0)
-    if 'click_concentration' in cfg:
-        if 'min' in cfg['click_concentration'] and click_conc < cfg['click_concentration']['min']:
-            return False
-        if 'max' in cfg['click_concentration'] and click_conc > cfg['click_concentration']['max']:
-            return False
-    
-    pcp_price = row.get('PCP竞价（美元）', 0)
-    if 'pcp_price' in cfg:
-        if 'min' in cfg['pcp_price'] and pcp_price < cfg['pcp_price']['min']:
-            return False
-        if 'max' in cfg['pcp_price'] and pcp_price > cfg['pcp_price']['max']:
-            return False
-    
-    # SPR检查（维持首页排名的8天预估单量）
-    spr = row.get('SPR', 0)
-    if 'spr' in cfg:
-        if 'max' in cfg['spr'] and spr > cfg['spr']['max']:
-            return False
-    
-    # 标题密度检查（关键词在标题中的密度）
-    title_density = row.get('标题密度', 0)
-    if 'title_density' in cfg:
-        if 'max' in cfg['title_density'] and title_density > cfg['title_density']['max']:
-            return False
-    
-    # 产品特征检查
-    price = row.get('价格（美元）', 0)
-    if 'price' in cfg:
-        if 'min' in cfg['price'] and price < cfg['price']['min']:
-            return False
-        if 'max' in cfg['price'] and price > cfg['price']['max']:
-            return False
-    
-    review_count = row.get('评分数', 0)
-    if 'review_count' in cfg:
-        if 'min' in cfg['review_count'] and review_count < cfg['review_count']['min']:
-            return False
-        if 'max' in cfg['review_count'] and review_count > cfg['review_count']['max']:
-            return False
-    
-    rating = row.get('评分值', 0)
-    if 'rating' in cfg:
-        if 'min' in cfg['rating'] and rating < cfg['rating']['min']:
-            return False
-        if 'max' in cfg['rating'] and rating > cfg['rating']['max']:
-            return False
-    
-    need_supply_ratio = row.get('需供比', 0)
-    if 'need_supply_ratio' in cfg:
-        if 'min' in cfg['need_supply_ratio'] and need_supply_ratio < cfg['need_supply_ratio']['min']:
-            return False
-        if 'max' in cfg['need_supply_ratio'] and need_supply_ratio > cfg['need_supply_ratio']['max']:
-            return False
-    
-    # 购买率检查
-    purchase_rate = row.get('购买率', 0)
-    if 'purchase_rate' in cfg:
-        if 'min' in cfg['purchase_rate'] and purchase_rate < cfg['purchase_rate']['min']:
-            return False
-    
-    # 毛利率检查（基于新的成本模型）
-    price = row.get('价格（美元）', 0)
-    estimated_margin = calculate_profit_margin(price)
-    if estimated_margin < 10:  # 毛利率<10%的过滤掉
-        return False
-    
-    return True
+# 4 策略筛选已废弃 — 替换为 4 桶（Part B 推品策略）见 backend/selectors/strategy_router.py
+# check_strategy_match 已删
 
 
 # ============================================================
@@ -818,52 +692,10 @@ def main():
         df_final = df_final[df_final['关键词(绿色建议进入，黄色找切入点，粉色观察)'].isin(unique_kws)]
         print(f"\n[TEST] 测试模式：取前{TEST_COUNT}个关键词 ({len(df_final)}条)")
     else:
-        # 正式模式：执行4种策略筛选
-        print("\n执行4种策略筛选...")
-        all_selected = []
-        seen_keywords = set()
-
-        strategy_keys = [
-            "strategy1_blue_ocean",
-            "strategy2_red_ocean",
-            "strategy3_differentiation",
-            "strategy4_follow",
-        ]
-
-        for key in strategy_keys:
-            cfg = STRATEGY_CONFIG[key]
-            name = cfg["name"]
-            quota = cfg["quota"]
-
-            # 筛选
-            filtered = df[df.apply(lambda row: check_strategy_match(row, key), axis=1)]
-            # 去重
-            filtered = filtered[~filtered['关键词(绿色建议进入，黄色找切入点，粉色观察)'].isin(seen_keywords)]
-            # 按排名变化排序（优先选排名上升的）
-            filtered = filtered.sort_values('rank_change', ascending=False)
-            # 取top
-            taken = filtered.head(quota)
-
-            if len(taken) > 0:
-                taken = taken.copy()
-                taken['分配策略'] = name
-                all_selected.append(taken)
-                seen_keywords.update(taken['关键词(绿色建议进入，黄色找切入点，粉色观察)'].tolist())
-
-            print(f"  {name}: {len(taken)}/{quota} 个")
-
-        # 合并
-        if not all_selected:
-            print("\n筛选结果为空")
-            return
-
-        df_final = pd.concat(all_selected, ignore_index=True)
-        df_final = df_final.reset_index(drop=True)
-
-        # 确保不超过total_quota
-        max_quota = STRATEGY_CONFIG.get("total_quota", 100)
-        if len(df_final) > max_quota:
-            df_final = df_final.head(max_quota)
+        # 正式模式：4 策略筛选已废弃，4 桶分流在 strategy_router.py
+        # 这里直接拿全量 df（无 quota 限制）
+        print("\n4 策略筛选已废弃，候选全量进入下一步（4 桶由 strategy_router.py 处理）")
+        df_final = df.copy().reset_index(drop=True)
 
     # 3. 分析每个产品
     print(f"\n{'=' * 80}")
