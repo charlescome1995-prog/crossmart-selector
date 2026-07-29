@@ -443,12 +443,44 @@ def run():
                 print(f'  ⚠️ Part A+ JSON 写盘失败: {e}')
 
     out = {
+        'schema_version': 'selection_data.v1',  # 2026-07-29 整合：单源 = selection-data.json 内含 strategy.buckets + keyword_asins.records
         'generated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'source_file': ', '.join([os.path.basename(e) for e in excels]),
         'total': len(products),
         'strategy_dist': {},  # 4 策略已废弃，分布统计改在 strategy.json.buckets 里
         'products': products,
     }
+
+    # ── 嵌入 strategy.buckets（4 桶推品）──────────────────────────
+    strategy_frontend = os.path.join(_THIS, '..', 'frontend', 'data', 'strategy.json')
+    if os.path.exists(strategy_frontend):
+        try:
+            with open(strategy_frontend, 'r', encoding='utf-8') as f:
+                strategy = json.load(f)
+            out['strategy'] = {
+                'buckets': strategy.get('buckets', {}),
+                'legacy_keywords': strategy.get('legacy_keywords', []),
+                'stats': strategy.get('stats', {}),
+                'generated_at': strategy.get('generated_at'),
+            }
+            print(f'  📦 嵌入 strategy.buckets: {sum(v["count"] for v in strategy.get("buckets", {}).values())} 条进桶')
+        except Exception as e:
+            print(f'  ⚠️ 读 strategy.json 失败（不影响主流程）: {e}')
+
+    # ── 嵌入 keyword_asins.records（ASIN 详情）──────────────────
+    if os.path.exists(KEYWORD_ASINS_JSON):
+        try:
+            with open(KEYWORD_ASINS_JSON, 'r', encoding='utf-8') as f:
+                ka = json.load(f)
+            out['keyword_asins'] = {
+                'records': ka.get('records', {}),
+                'generated_at': ka.get('generated_at'),
+                'count': ka.get('count', 0),
+                'ok_count': ka.get('ok_count', 0),
+            }
+            print(f'  📦 嵌入 keyword_asins.records: {len(ka.get("records", {}))} 个关键词')
+        except Exception as e:
+            print(f'  ⚠️ 读 keyword_asins.json 失败（不影响主流程）: {e}')
 
     os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
     with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:

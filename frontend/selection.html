@@ -195,8 +195,8 @@ footer code{font-family:ui-monospace,monospace;font-size:12px;background:#f0f0f0
 </div>
 
 <footer>
-  Source: <code>data/strategy.json</code> ·
-  Pipeline: <code>backend/selectors/{quick_filter,triage,strategy_router,render_html}.py</code> ·
+  Source: <code>data/selection-data.json</code>（内嵌 strategy.buckets + keyword_asins.records）·
+  Pipeline: <code>python backend/run_all.py</code> ·
   Legacy: <code>backend/config/legacy_keywords.json</code> ·
   Doc: <code>SOP.md</code>
 </footer>
@@ -438,13 +438,18 @@ function attachSortHandlers() {
 
 async function load() {
   try {
-    const r = await fetch('data/strategy.json?_=' + Date.now());
+    const r = await fetch('data/selection-data.json?_=' + Date.now());
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    _strategy = await r.json();
+    const _full = await r.json();
+
+    // 兼容嵌入格式（selection_data.v1）与旧独立 strategy.json
+    _strategy = (_full.strategy)
+      ? _full.strategy                       // 嵌入在 selection-data.json.strategy
+      : { buckets: _full.buckets || {}, legacy_keywords: _full.legacy_keywords || [], stats: _full.stats || {}, generated_at: _full.generated_at };
 
     const total = (_strategy.stats && _strategy.stats.in_buckets) || 0;
     document.getElementById('totalCount').textContent = total;
-    document.getElementById('generatedAt').textContent = (_strategy.generated_at || '').replace('T', ' ').substring(0, 16);
+    document.getElementById('generatedAt').textContent = ((_strategy.generated_at || _full.generated || '')).replace('T', ' ').substring(0, 16);
 
     const lks = _strategy.legacy_keywords || [];
     document.getElementById('legacyCount').textContent = lks.length;
@@ -455,7 +460,7 @@ async function load() {
     applySearch();
   } catch(e) {
     document.getElementById('panels').innerHTML =
-      '<div style="padding:40px;text-align:center;color:#94a3b8">⚠️ 加载失败：' + e.message + '<br><br>请确认 <code>data/strategy.json</code> 存在</div>';
+      '<div style="padding:40px;text-align:center;color:#94a3b8">⚠️ 加载失败：' + e.message + '<br><br>请确认 <code>data/selection-data.json</code> 存在</div>';
   }
 }
 
@@ -793,11 +798,12 @@ function toggleExpand(key) {
 async function loadAsins() {
   try {
     const cacheBust = '?_=' + Date.now();
-    const [ar, sr] = await Promise.all([
-      fetch('data/keyword_asins.json' + cacheBust).then(r => { if (!r.ok) throw new Error('keyword_asins.json HTTP ' + r.status); return r.json(); }),
-      fetch('data/strategy.json' + cacheBust).then(r => { if (!r.ok) throw new Error('strategy.json HTTP ' + r.status); return r.json(); })
-    ]);
-    _asins = ar;
+    // 2026-07-29 单源化：只读 selection-data.json（内嵌 keyword_asins.records + strategy.buckets）
+    const full = await fetch('data/selection-data.json' + cacheBust)
+      .then(r => { if (!r.ok) throw new Error('selection-data.json HTTP ' + r.status); return r.json(); });
+    _asins = full.keyword_asins || { records: {} };
+    const sr = full.strategy || full;  // 兼容嵌入/独立
+
     const records = _asins.records || {};
     const keys = Object.keys(records);
 
@@ -816,7 +822,7 @@ async function loadAsins() {
 
     document.getElementById('kwCount').textContent = keys.length;
     document.getElementById('asinTotal').textContent = totalAsins;
-    document.getElementById('asinsMeta').textContent = '源: ' + (_asins.meta && _asins.meta.source ? _asins.meta.source.slice(0, 60) + '...' : '');
+    document.getElementById('asinsMeta').textContent = '源: selection-data.json';
 
     const tbody = document.getElementById('step2Tbody');
     if (keys.length === 0) {
@@ -827,7 +833,7 @@ async function loadAsins() {
   } catch (e) {
     document.getElementById('step2Tbody').innerHTML =
       '<tr><td colspan="13" style="padding:40px;text-align:center;color:#94a3b8">⚠️ 加载失败: ' + escapeHtml(e.message) +
-      '<br><br>请确认 <code>data/keyword_asins.json</code> 与 <code>data/strategy.json</code> 存在</td></tr>';
+      '<br><br>请确认 <code>data/selection-data.json</code> 存在</td></tr>';
   }
 }
 
