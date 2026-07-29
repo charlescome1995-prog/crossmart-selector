@@ -256,7 +256,7 @@ def render_html(strategy: dict) -> str:
 <footer>
   数据源: <code>frontend/data/strategy.json</code> ·
   由 <code>backend/selectors/render_html.py</code> 生成 ·
-  配套文件: <code>triage.json</code> (3 档分档) · <code>quick-pick.json</code> (候选池)
+  配套文件: <code>triage.json</code> (3 档分档) · <code>strategy.json</code> (4 桶推品)
 </footer>
 
 <script>

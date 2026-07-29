@@ -11,7 +11,7 @@ CrossMart Selector - 选品主入口
 逻辑沿用旧引擎（amazon_ai_kit）：16 核心指标 + 4 策略 + FBA 利润模型。
 本入口负责：动态规整日期列名、复用引擎函数、计算综合评分、输出前端 JSON。
 """
-import sys, os, re, json, glob
+import sys, os, re, json, glob, time
 from datetime import datetime
 
 _THIS = os.path.dirname(os.path.abspath(__file__))
@@ -385,8 +385,8 @@ def run():
     products.sort(key=lambda x: x['score'], reverse=True)
 
     # ══════════════════════════════════════════════════════════════════
-    # Part A+ 浏览器补抓：对 Excel 候选里的关键词启 Edge+卖家精灵抓 ASIN
-    # 2026-07-29 新增 — 复用 fetch_keyword_asins 主流程
+    # Part A+ 浏览器补抓：从 triage.json 读 🟢🟡 候选（默认 23 条），按国别循环抓取
+    # 2026-07-29 调整：从 triage 🟢🟡 取词（不要 Excel 全量 50+），分国别启动 Edge 抓取
     # 关闭：PART_A_PLUS=0 python backend/run_selection.py
     # ══════════════════════════════════════════════════════════════════
     if PART_A_PLUS_ENABLED and len(df) > 0:
@@ -395,28 +395,54 @@ def run():
         except ImportError as e:
             print(f'⚠️ Part A+ 跳过：fetch_keyword_asins 导入失败（{e}）')
         else:
-            # 取月搜 Top 50 去重（避免几百条全抓几个小时）
-            kw_col_local = '关键词' if '关键词' in df.columns else KW_COL
-            top = (
-                df[['_country', kw_col_local, '20260113月搜']]
-                .dropna()
-                .drop_duplicates(subset=[kw_col_local, '_country'])
-                .sort_values('20260113月搜', ascending=False)
-                .head(50)
-            )
-            items = [
-                {'country': str(r['_country']), 'keyword': str(r[kw_col_local])}
-                for _, r in top.iterrows()
-            ]
-            print(f'\n═══ Part A+ 浏览器补抓 {len(items)} 条 (max_asins={PART_A_PLUS_MAX_ASINS}/条) ═══')
-            try:
-                results = fetch_keywords_batch(items, max_asins_per_kw=PART_A_PLUS_MAX_ASINS)
-            except Exception as e:
-                print(f'⚠️ Part A+ 整体失败（不阻塞主流程）: {e}')
+            # 从 triage.json 读 🟢🟡（默认 23 条 = 4 桶候选）
+            triage_path = os.path.join(_THIS, '..', 'frontend', 'data', 'triage.json')
+            if not os.path.exists(triage_path):
+                print(f'⚠️ Part A+ 跳过：triage.json 不存在（请先跑 triage.py / strategy_router.py）')
                 results = []
+            else:
+                try:
+                    with open(triage_path, 'r', encoding='utf-8') as f:
+                        triage = json.load(f)
+                except Exception as e:
+                    print(f'⚠️ Part A+ 跳过：triage.json 读取失败（{e}）')
+                    results = []
+                else:
+                    green_yellow = [it for it in triage.get('items', []) if it.get('tier') in ('🟢', '🟡')]
+                    # 按国别分组（顺序保持 triage 原序）
+                    from collections import OrderedDict
+                    by_country = OrderedDict()
+                    for it in green_yellow:
+                        c = it.get('country') or '_'
+                        by_country.setdefault(c, []).append(it)
+
+                    print(f'\n═══ Part A+ 浏览器补抓 🟢🟡 {len(green_yellow)} 条（{len(by_country)} 国）')
+                    for c, lst in by_country.items():
+                        print(f'    {c}: {len(lst)} 条')
+                    print(f'    max_asins/词 = {PART_A_PLUS_MAX_ASINS}')
+                    print(f'    每国独立 Edge session（异常隔离）═══\n')
+
+                    results = []
+                    for country, items_country in by_country.items():
+                        kw_items = [
+                            {'country': it['country'], 'keyword': it['keyword']}
+                            for it in items_country
+                        ]
+                        print(f'──── {country}: 启动 Edge, 抓 {len(kw_items)} 条 ────')
+                        try:
+                            r = fetch_keywords_batch(kw_items, max_asins_per_kw=PART_A_PLUS_MAX_ASINS, keep_browser=False)
+                            results.extend(r)
+                        except Exception as e:
+                            print(f'  ⚠️ {country} 整批失败（不阻塞其他国）: {e}')
+                            # 占位：每条都标失败
+                            for it in kw_items:
+                                results.append({
+                                    **it,
+                                    'rec': {'ok': False, 'error': str(e), 'asin_count': 0, 'detail': []},
+                                })
             ok_n = sum(1 for r in results if r.get('rec', {}).get('ok'))
             total_asins = sum(r.get('rec', {}).get('asin_count', 0) for r in results)
-            print(f'  Part A+ 完成: {ok_n}/{len(results)} 充分, {total_asins} 个 ASIN')
+            print(f'\n  Part A+ 完成: {ok_n}/{len(results)} 充分, {total_asins} 个 ASIN')
             try:
                 os.makedirs(os.path.dirname(KEYWORD_ASINS_JSON), exist_ok=True)
                 # 前端 (selection.html loadAsins) 读 keyword_asins.json.records[country::keyword]
@@ -431,6 +457,7 @@ def run():
                             'schema_version': 'keyword_asins.v2',
                             'generated_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                             'source_excel': os.path.basename(excel),
+                            'source_triage': '🟢🟡 23 条（按国别分组抓取）',
                             'count': len(results),
                             'ok_count': ok_n,
                             'records': records,
@@ -495,7 +522,7 @@ def run():
         print(f'   平均评分: {avg_score:.1f} | 平均毛利: {avg_margin:.1f}%')
         print(f'   Top3: ' + ' / '.join(p['keyword'][:20] for p in products[:3]))
 
-    # ── 推送到 CrossMart Hub ─────────────────────────────────────
+    # ── 推送到 CrossMart Hub（带 retry × 3 + 指数退避）───────────
     try:
         import datetime as _dt
         from push_to_hub import push_to_hub
@@ -524,10 +551,24 @@ def run():
                 for p in products
             ],
         }
-        push_to_hub('selection.json', _payload)
-        print('🌐 已同步到 crossmart-hub/data/selection.json')
+        # 2026-07-29: Hub 上次报 IncompleteRead，加 3 次 retry + 3s/9s/27s 退避
+        hub_ok = False
+        for attempt in range(1, 4):
+            try:
+                push_to_hub('selection.json', _payload)
+                print(f'🌐 已同步到 crossmart-hub/data/selection.json（attempt {attempt}/3）')
+                hub_ok = True
+                break
+            except Exception as e:
+                wait = 3 ** attempt  # 3 / 9 / 27
+                print(f'⚠️ Hub 同步 attempt {attempt}/3 失败: {e}')
+                if attempt < 3:
+                    print(f'   {wait}s 后重试...')
+                    time.sleep(wait)
+        if not hub_ok:
+            print(f'⚠️ Hub 同步 3 次失败（不阻塞主流程），可手动 git push 补救')
     except Exception as e:
-        print(f'⚠️ Hub 同步失败（不阻塞主流程）: {e}')
+        print(f'⚠️ Hub 同步封装异常（不阻塞主流程）: {e}')
 
     return 0
 

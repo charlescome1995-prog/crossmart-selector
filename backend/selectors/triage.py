@@ -15,7 +15,7 @@ triage.py — Part A 卡数据（选品环节）
 - 不回答"怎么打"——那是 Part B 的事
 
 与 quick_filter.py 的边界：
-- quick_filter: ABA xlsx → 48 条候选（卡数据筛选）
+- quick_filter: ABA xlsx → 48 条候选（卡数据筛选），落到 processed/quick_filter/latest.json
 - triage:       48 条候选 → 3 档分档 + 风险标签（卡数据归档）
 """
 from __future__ import annotations
@@ -200,7 +200,7 @@ def main():
 
     out = {
         "schema_version": "triage.v1",
-        "source_pool": f"quick-pick.json#{quick.get('config_version', 'unknown')}",
+        "source_pool": f"quick_filter#{quick.get('config_version', 'unknown')}",
         "generated_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
         "thresholds": TRIAGE_THRESHOLDS,
         "flag_dicts": list(flag_dicts.keys()),
