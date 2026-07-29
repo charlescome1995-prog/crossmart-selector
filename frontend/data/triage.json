@@ -1,7 +1,7 @@
 {
   "schema_version": "triage.v1",
-  "source_pool": "quick-pick.json#2026-07-23.1",
-  "generated_at": "2026-07-29T14:48:15+08:00",
+  "source_pool": "quick_filter#2026-07-23.1",
+  "generated_at": "2026-07-29T15:04:42+08:00",
   "thresholds": {
     "A_月购_min": 300,
     "B_需供比_min": 10,
