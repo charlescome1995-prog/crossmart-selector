@@ -1,0 +1,30 @@
+{
+  "runs": [
+    {
+      "base": "US_essence_nose_ring_diffuser_20260729_081938",
+      "country": "US",
+      "keyword": "essence nose ring diffuser",
+      "scraped_at": "2026-07-29T08:19:38",
+      "asin_count": 50,
+      "sponsored_count": 2,
+      "title_first": "Essence Nasal Diffuser Starter Kit – Essential Oil Silicone Nose Ring Inhalers f",
+      "price_min": 6.49,
+      "price_max": 54.99,
+      "price_avg": 22.21,
+      "rating_samples": [
+        4.2,
+        4.2,
+        4.3,
+        4.4,
+        4.4
+      ],
+      "asin_samples": [
+        "B09889V6Y6",
+        "B09889V6Y6",
+        "B0988BWLD3",
+        "B0F27WZD2F",
+        "B0DVLG9M42"
+      ]
+    }
+  ]
+}
