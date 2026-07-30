@@ -237,6 +237,17 @@ def compute_score(row, indicators, margin):
 
 
 def run():
+    # 2026-07-30 新增：--country 可选参数（默认 = 全部 4 站，与原行为一致）
+    #   用法：python backend/run_selection.py --country US
+    import argparse
+    _parser = argparse.ArgumentParser(add_help=False)
+    _parser.add_argument('--country', type=str, default=None,
+                        help='只抓指定国家的 Part A+（US/UK/DE/CA）。默认 = 全部 4 站。')
+    _args, _ = _parser.parse_known_args()
+    country_filter = _args.country.upper() if _args.country else None
+    if country_filter:
+        print(f'⚙️  --country={country_filter} → Part A+ 只抓此国')
+
     print('=' * 70)
     print('CrossMart Selector - 选品引擎')
     print('=' * 70)
@@ -410,6 +421,11 @@ def run():
                     results = []
                 else:
                     green_yellow = [it for it in triage.get('items', []) if it.get('tier') in ('🟢', '🟡')]
+                    # 2026-07-30 新增：--country 过滤（只跑指定国）
+                    if country_filter:
+                        before_n = len(green_yellow)
+                        green_yellow = [it for it in green_yellow if (it.get('country') or '').upper() == country_filter]
+                        print(f'  ⚙️  --country={country_filter} 过滤: {before_n} → {len(green_yellow)} 条')
                     # 按国别分组（顺序保持 triage 原序）
                     from collections import OrderedDict
                     by_country = OrderedDict()
@@ -467,13 +483,41 @@ def run():
                 print(f'  ⚠️ 老品库 tag 失败（不影响主流程）: {e}')
             try:
                 os.makedirs(os.path.dirname(KEYWORD_ASINS_JSON), exist_ok=True)
+                # 2026-07-30 增量写盘：读旧 keyword_asins.json，保留非 country_filter 国的记录
+                #   解决「--country US 单独跑时不要清空 UK/DE/CA 历史数据」
+                #   默认 4 站全跑时，country_filter=None → 全部 records 视为被替换（行为不变）
+                existing = {}
+                if os.path.exists(KEYWORD_ASINS_JSON):
+                    try:
+                        with open(KEYWORD_ASINS_JSON, 'r', encoding='utf-8') as f:
+                            existing = json.load(f)
+                    except Exception as e:
+                        print(f'  ⚠️ 读旧 keyword_asins.json 失败（按全量写处理）: {e}')
+                existing_records = existing.get('records') or {}
+                existing_items = existing.get('items') or []
+
                 # 前端 (selection.html loadAsins) 读 keyword_asins.json.records[country::keyword]
                 # 这里同时写 records (dict by 'country::keyword') 和 items (list)，方便两端消费
                 # 2026-07-30 records 也带上 kw_zh / kw_group，方便前端 record-only 模式渲染
-                records = {
+                new_records = {
                     (r['country'] + '::' + r['keyword']): {**(r.get('rec') or {}), 'kw_zh': r.get('kw_zh', ''), 'kw_group': r.get('kw_group', '')}
                     for r in results
                 }
+
+                if country_filter:
+                    # 增量：旧 records 里去掉本国的 → 合并新 records（dict 自然覆盖）
+                    keep_records = {k: v for k, v in existing_records.items()
+                                    if not k.startswith(country_filter + '::')}
+                    keep_items = [it for it in existing_items
+                                  if (it.get('country') or '').upper() != country_filter]
+                    final_records = {**keep_records, **new_records}
+                    final_items = keep_items + results
+                    print(f'  🔀 增量写盘: 保留 {len(keep_records)} 条旧 {country_filter} 之外的词，覆盖 {len(new_records)} 条 {country_filter} 新词')
+                else:
+                    # 全量：4 站全跑（与原行为一致）
+                    final_records = new_records
+                    final_items = results
+
                 with open(KEYWORD_ASINS_JSON, 'w', encoding='utf-8') as f:
                     json.dump(
                         {
@@ -481,14 +525,14 @@ def run():
                             'generated_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                             'source_excel': os.path.basename(excel),
                             'source_triage': '🟢🟡 23 条（按国别分组抓取）',
-                            'count': len(results),
-                            'ok_count': ok_n,
-                            'records': records,
-                            'items': results,
+                            'count': len(final_items),
+                            'ok_count': sum(1 for r in final_items if (r.get('rec') or {}).get('ok')),
+                            'records': final_records,
+                            'items': final_items,
                         },
                         f, ensure_ascii=False, indent=2,
                     )
-                print(f'  📤 Part A+ 写出: {KEYWORD_ASINS_JSON}')
+                print(f'  📤 Part A+ 写出: {KEYWORD_ASINS_JSON}（共 {len(final_records)} 条）')
             except Exception as e:
                 print(f'  ⚠️ Part A+ JSON 写盘失败: {e}')
 
