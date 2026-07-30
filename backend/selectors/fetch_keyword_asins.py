@@ -571,6 +571,19 @@ def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60, max_pag
                 all_detail.append(flat)
                 page_new += 1
             log(f"  📄 page {page_num}: 本页 {len(val)} 张卡，新增 {page_new}（去重后），累计 {len(all_detail)}")
+
+            # 2026-07-30 早停：按「新进有量产品」决定是否翻下一页
+            #   - 本页有命中  → 翻（除非已到 max_pages）
+            #   - 本页 0 命中 → break（不再翻）
+            page_asins = [a for a in all_detail if a.get("page") == page_num]
+            has_nv, nv_n = _has_new_volume_on_page(page_asins)
+            if has_nv and page_num < max_pages:
+                log(f"  📄 page {page_num}: 新进有量 {nv_n} 个 → 翻下一页")
+            elif has_nv:
+                log(f"  📄 page {page_num}: 新进有量 {nv_n} 个（已是最后一页 max_pages={max_pages}）")
+            else:
+                log(f"  📄 page {page_num}: 新进有量 0 个 → 停止翻页")
+                break
     finally:
         try:
             ws.close()
@@ -617,6 +630,40 @@ SS_REGEX = [
     ("ss_ad_keywords", re.compile("\u5e7f\u544a\u6d41\u91cf\u8bcd:\s*(\d+)")),
     ("ss_suggest_keywords", re.compile("\u641c\u7d22\u63a8\u8350\u8bcd:\s*(\d+)")),
 ]
+
+
+def _to_int(v) -> int | None:
+    """Safe int parse: '3,868' / '0.0' / '' / None → None 或 int。"""
+    if v is None:
+        return None
+    s = str(v).replace(",", "").strip()
+    if not s:
+        return None
+    try:
+        return int(float(s))
+    except Exception:
+        return None
+
+
+def _has_new_volume_on_page(page_asins: list[dict]) -> tuple[bool, int]:
+    """
+    2026-07-30 新进有量产品判定（与前端 selection.html newVolumeSet 对齐）
+      - ss_days_listed ≤ 90            近 3 月内上架
+      - ss_review_count  < 100
+      - ss_monthly_sales_child / parent > 100
+    缺字段（卖家精灵未注入）→ 跳过，不算"否"。
+    Returns: (has_new_volume, count)
+    """
+    n = 0
+    for d in page_asins:
+        days = _to_int(d.get("ss_days_listed"))
+        rc = _to_int(d.get("ss_review_count"))
+        sales = _to_int(d.get("ss_monthly_sales_child")) or _to_int(d.get("ss_monthly_sales_parent"))
+        if days is None or rc is None or sales is None:
+            continue
+        if days <= 90 and rc < 100 and sales > 100:
+            n += 1
+    return n > 0, n
 
 
 def parse_ss_text(ss_text):
