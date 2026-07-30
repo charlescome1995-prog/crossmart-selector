@@ -19,6 +19,17 @@ DOMAIN_MAP = {"UK": "amazon.co.uk", "DE": "amazon.de", "CA": "amazon.ca", "US": 
 PAGE_PAUSE = 4
 SEARCH_PAUSE = 3
 
+# ── SS 注入等待策略（2026-07-29：从「固定超时后跳过」改为「逐卡等到加载完」）──
+# 每张卡都会被反复滚进视口，直到卖家精灵把字段写进 DOM；
+# 只有「反复喂满 SS_CARD_NUDGES 次视口仍然空」才判定这个 ASIN 真的没数据。
+SS_WAIT_MAX_SEC = int(os.environ.get("SS_WAIT_MAX_SEC", "300"))   # 单次抓取的等待上限（兜底，防死循环）
+SS_CARD_NUDGES = int(os.environ.get("SS_CARD_NUDGES", "8"))       # 单卡最多喂几次视口才认定「真没有」
+SS_READY_MINLEN = int(os.environ.get("SS_READY_MINLEN", "300"))   # 容器 innerText 长度达标线
+SS_MIN_RATIO = float(os.environ.get("SS_MIN_RATIO", "0.9"))       # 覆盖率达标 → 直接通过
+SS_ACCEPT_RATIO = float(os.environ.get("SS_ACCEPT_RATIO", "0.5")) # 已收敛（真没数据）时的最低接受覆盖率
+SS_NUDGE_BATCH = int(os.environ.get("SS_NUDGE_BATCH", "6"))       # 每轮滚多少张 pending 卡
+SS_NUDGE_SLEEP = float(os.environ.get("SS_NUDGE_SLEEP", "1.2"))   # 每张卡停留时长
+
 EDGE_EXE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 EDGE_PROFILE_REAL = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge\User Data")
 SELLERSPRITE_EXT = os.path.join(EDGE_PROFILE_REAL, "Default", "Extensions",
@@ -129,33 +140,134 @@ EXTRACT_JS = r"""(() => {
 """
 
 
+SS_SELECTOR = '[name^="seller-sprite-extension-quick-view-"]'
+
+# 逐卡体检：每张 search-result 卡的 SS 容器是否已经注入满字段
+SS_STATUS_JS = """(() => {
+  const MINLEN = %(minlen)d;
+  const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
+  const ready = [], pending = [];
+  for (const c of cards) {
+    const asin = c.getAttribute('data-asin') || '';
+    if (!asin.startsWith('B0') || asin.length !== 10) continue;
+    const box = c.querySelector('%(sel)s');
+    const len = box ? (box.innerText || '').length : 0;
+    (len >= MINLEN ? ready : pending).push(asin);
+  }
+  return {total: ready.length + pending.length, ready: ready.length, pending: pending};
+})()"""
+
+# 把指定 ASIN 的卡滚到视口正中，逼卖家精灵的 IntersectionObserver 开工
+SS_NUDGE_JS = """(() => {
+  const c = document.querySelector('div[data-asin="%(asin)s"]');
+  if (!c) return false;
+  c.scrollIntoView({block: 'center'});
+  return true;
+})()"""
+
+
+def _wait_ss_all(cmd, log_prefix="  "):
+    """
+    等到每一张卡的卖家精灵字段都注入完成，而不是超时就跳过。
+
+    做法：反复把「还空着」的卡滚进视口逼扩展加载；某张卡被喂过
+    SS_CARD_NUDGES 次视口仍然空，才认定它真的没有数据（卖家精灵查不到），
+    从待办里划掉。全部待办清空 = 收敛。
+
+    Returns: (converged: bool, ready: int, total: int, no_data: list[str])
+    """
+    status_js = SS_STATUS_JS % {"minlen": SS_READY_MINLEN, "sel": SS_SELECTOR}
+    deadline = time.time() + SS_WAIT_MAX_SEC
+    nudges = {}          # asin -> 已喂视口次数
+    ready = total = 0
+    rr = 0               # 轮转起点，保证每张待办卡都轮得到
+
+    def probe():
+        ev = cmd("Runtime.evaluate", {"expression": status_js, "returnByValue": True}, t=10)
+        v = ev.get("result", {}).get("value")
+        return v if isinstance(v, dict) else {}
+
+    while time.time() < deadline:
+        st = probe()
+        total = st.get("total", 0) or 0
+        ready = st.get("ready", 0) or 0
+        pending = st.get("pending") or []
+        if total == 0:
+            time.sleep(1)
+            continue
+        # 达标条件：一张不剩（不是「够多了就走」）
+        if not pending:
+            log(f"{log_prefix}✓ SS 全部就位 {ready}/{total} (100%)")
+            return True, ready, total, []
+        # 还没喂够次数的卡 = 值得继续等
+        todo = [a for a in pending if nudges.get(a, 0) < SS_CARD_NUDGES]
+        if not todo:
+            no_data = list(pending)
+            log(f"{log_prefix}✓ SS 收敛 {ready}/{total}；{len(no_data)} 个 ASIN 喂满 "
+                f"{SS_CARD_NUDGES} 次仍无数据（判定卖家精灵确实没有）")
+            return True, ready, total, no_data
+        batch = [todo[(rr + i) % len(todo)] for i in range(min(SS_NUDGE_BATCH, len(todo)))]
+        rr += len(batch)
+        log(f"{log_prefix}… SS {ready}/{total} 就位，待等 {len(todo)} 张，本轮喂 {len(batch)} 张")
+        for asin in batch:
+            cmd("Runtime.evaluate", {"expression": SS_NUDGE_JS % {"asin": asin}}, t=5)
+            nudges[asin] = nudges.get(asin, 0) + 1
+            time.sleep(SS_NUDGE_SLEEP)
+
+    log(f"{log_prefix}⚠ SS 等待触顶 {SS_WAIT_MAX_SEC}s，当前 {ready}/{total}（会触发 retry）")
+    return False, ready, total, []
+
+
+def _ss_ratio(rec):
+    """SS 字段覆盖率 = 有品牌/卖家的 ASIN 数 / 总 ASIN 数。"""
+    detail = (rec or {}).get("detail") or []
+    if not detail:
+        return 0.0, 0, 0
+    filled = sum(1 for a in detail if a.get("ss_brand") or a.get("ss_seller"))
+    return filled / len(detail), filled, len(detail)
+
+
 def _is_sufficient(rec):
-    """返回 rec 是否拿到足够 SS 数据；不够则触发 retry。"""
+    """
+    是否可以收工（不再 retry）。
+
+    两条通过路径：
+      1. 覆盖率 ≥ SS_MIN_RATIO（默认 90%）—— 正常情况
+      2. 已收敛（每张空卡都被反复喂过视口 SS_CARD_NUDGES 次仍然空 = 卖家精灵真没这条数据）
+         且覆盖率 ≥ SS_ACCEPT_RATIO
+    """
     if not rec:
         return False
-    detail = rec.get("detail") or []
-    if len(detail) == 0:
+    ratio, filled, total = _ss_ratio(rec)
+    if total == 0:
         return False
-    has_ss = sum(1 for a in detail if a.get("ss_brand") or a.get("ss_seller"))
-    return has_ss >= 5  # 至少 5 个 ASIN 有 SS 数据（storage bins 是 29/48）
+    if ratio >= SS_MIN_RATIO:
+        return True
+    return bool(rec.get("ss_converged")) and ratio >= SS_ACCEPT_RATIO
 
 
 def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60, max_retries=3):
-    """带 retry: 若 SS 注入不充分（品牌/卖家 <30%），重新打开 tab 再抓。"""
+    """带 retry: 若 SS 注入覆盖率不够且未收敛，重新打开 tab 再抓。"""
     import websocket
     last_rec = None
+    best_rec = None
+    best_ratio = -1.0
     for attempt in range(1, max_retries + 1):
         log(f"  attempt {attempt}/{max_retries}")
         rec = _fetch_srp_attempt(country, keyword, port, timeout)
         last_rec = rec
+        ratio, filled, total = _ss_ratio(rec)
+        if ratio > best_ratio:
+            best_ratio, best_rec = ratio, rec
         if _is_sufficient(rec):
-            log(f"  ✓ attempt {attempt} SS 充分 (>=30% brand/seller)")
+            log(f"  ✓ attempt {attempt} SS 覆盖 {filled}/{total} ({ratio:.0%})"
+                f"{'（已收敛：剩余卡确认无数据）' if ratio < SS_MIN_RATIO else ''}")
             return rec
-        log(f"  ⚠ attempt {attempt} SS 不充分，重试中...")
+        log(f"  ⚠ attempt {attempt} SS 覆盖仅 {filled}/{total} ({ratio:.0%})，重试中...")
         if attempt < max_retries:
             time.sleep(3)
-    log(f"  ✗ {max_retries} 次尝试后仍 SS 不充分，返回最后一次结果")
-    return last_rec
+    log(f"  ✗ {max_retries} 次尝试后覆盖率仍不足，返回最好一次（{best_ratio:.0%}）")
+    return best_rec or last_rec
 
 
 def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
@@ -205,75 +317,27 @@ def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
             break
         time.sleep(1)
         waited += 1000
-    # ── Phase 2: scroll 触发 lazy-load ──
-    # 卖家精灵是 IntersectionObserver 触发，每个 product card 滚到视口才注入 SS 容器。
-    # 每段睡 1.5s 让 SS 真注入完，再滚下一段。
-    SS_SELECTOR = '[name^="seller-sprite-extension-quick-view-"]'
+    # ── Phase 2: 整页粗滚一遍，先让所有卡片进过一次视口（触发 lazy-load + SS 容器建好）──
     SCROLL_STEP = 250
-    SCROLL_SLEEP = 1.5
+    SCROLL_SLEEP = 1.0
     for y in range(0, 6000, SCROLL_STEP):
         cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"}, t=3)
         time.sleep(SCROLL_SLEEP)
     cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
     time.sleep(2)
 
-    # ── Phase 3: 等 SS 容器数量 ≥20 ──
-    waited = 0
-    ss_n = 0
-    while waited < 30000:
-        ev = cmd("Runtime.evaluate", {
-            "expression": f"(() => document.querySelectorAll('{SS_SELECTOR}').length)()",
-            "returnByValue": True,
-        }, t=5)
-        ss_n = ev.get("result", {}).get("value", 0)
-        if isinstance(ss_n, int) and ss_n >= 20:
-            log(f"  ✓ Phase 3: SS 容器 {ss_n} 个")
-            break
-        time.sleep(1)
-        waited += 1000
-    if ss_n < 20:
-        log(f"  ⚠ Phase 3: 30s 后 SS 容器只 {ss_n} 个（继续）")
+    # ── Phase 3: 逐卡等到加载完（不再固定超时跳过）──
+    converged, ss_ready, ss_total, ss_no_data = _wait_ss_all(cmd)
 
-    # ── Phase 4: 等 SS 容器 innerText 长度 ≥500（说明 24 字段真注入了）──
-    # 注意：必须 returnByValue=True，否则 dict 返回 RemoteObject，value=空 {}
-    waited = 0
-    ss_max_len = 0
-    while waited < 25000:
-        ev = cmd("Runtime.evaluate", {
-            "expression": (
-                "(() => {"
-                f"  const els = document.querySelectorAll('{SS_SELECTOR}');"
-                "  let max = 0;"
-                "  for (const e of els) { if ((e.innerText||'').length > max) max = (e.innerText||'').length; }"
-                "  return {n: els.length, maxLen: max};"
-                "})()"
-            ),
-            "returnByValue": True,
-        }, t=5)
-        v = ev.get("result", {}).get("value", {})
-        if not isinstance(v, dict):
-            v = {}
-        ss_max_len = v.get("maxLen", 0)
-        if ss_max_len >= 500:
-            log(f"  ✓ Phase 4: SS maxLen={ss_max_len}（24 字段已注入）")
-            break
-        time.sleep(1)
-        waited += 1000
-    if ss_max_len < 500:
-        log(f"  ⚠ Phase 4: 25s 后 SS maxLen={ss_max_len}（继续）")
-
-    # ── Phase 5: 再滚一次确保底部卡片也被注入 ──
-    for y in range(0, 6000, SCROLL_STEP):
-        cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"}, t=3)
-        time.sleep(SCROLL_SLEEP)
     cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
-    time.sleep(5)  # 让 SS 最后一次注入完成
+    time.sleep(1)
 
     result = cmd("Runtime.evaluate", {"expression": EXTRACT_JS, "returnByValue": True, "awaitPromise": True})
     val = result.get("result", {}).get("value")
     ws.close()
     if not val:
         return None
+    ss_no_data_set = set(ss_no_data or [])
     detail = []
     for a in val:
         ss_text = a.get("ss_text", "")
@@ -291,11 +355,19 @@ def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
             # 直接合并 parse_ss_text 输出（key 形如 ss_brand / ss_seller）
             **ss,
         }
+        # 标注：这个 ASIN 是「等到确认没数据」而不是「等不及跳过」
+        if flat["asin"] in ss_no_data_set:
+            flat["ss_no_data"] = True
         detail.append(flat)
     return {
         "country": country, "keyword": keyword, "asin_count": len(detail),
         "asin_list": [a["asin"] for a in detail], "detail": detail,
         "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        # SS 等待结果（供 _is_sufficient / 前端诊断用）
+        "ss_converged": converged,
+        "ss_ready": ss_ready,
+        "ss_total": ss_total,
+        "ss_no_data_asins": list(ss_no_data),
     }
 
 
@@ -404,7 +476,15 @@ def fetch_keyword_via_cdp(country, keyword, max_asins=20, port=EDGE_CDP_PORT, ti
         "asin_list": [a["asin"] for a in detail],
         "detail": detail,
         "fetched_at": rec.get("fetched_at", time.strftime("%Y-%m-%dT%H:%M:%S")),
-        "ok": _is_sufficient({"detail": detail}),
+        # 截断后重新判定，但要把等待结果一起带上（否则「已收敛」信息丢失）
+        "ok": _is_sufficient({
+            "detail": detail,
+            "ss_converged": rec.get("ss_converged"),
+        }),
+        "ss_converged": rec.get("ss_converged"),
+        "ss_ready": rec.get("ss_ready"),
+        "ss_total": rec.get("ss_total"),
+        "ss_no_data_asins": rec.get("ss_no_data_asins") or [],
     }
 
 
