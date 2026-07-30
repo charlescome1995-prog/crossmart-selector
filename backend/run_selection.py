@@ -425,8 +425,9 @@ def run():
 
                     results = []
                     for country, items_country in by_country.items():
+                        # 2026-07-30 透传：把 quick_filter 输出的 kw_zh / kw_group 一并带入浏览器抓取结果
                         kw_items = [
-                            {'country': it['country'], 'keyword': it['keyword']}
+                            {k: v for k, v in it.items() if k in ('country', 'keyword', 'kw_zh', 'kw_group', 'category_top', 'category_sub')}
                             for it in items_country
                         ]
                         print(f'──── {country}: 启动 Edge, 抓 {len(kw_items)} 条 ────')
@@ -444,12 +445,33 @@ def run():
             ok_n = sum(1 for r in results if r.get('rec', {}).get('ok'))
             total_asins = sum(r.get('rec', {}).get('asin_count', 0) for r in results)
             print(f'\n  Part A+ 完成: {ok_n}/{len(results)} 充分, {total_asins} 个 ASIN')
+
+            # 2026-07-30 老品库：把老品库 ASIN 在 detail 里标 is_ours=True（前端可灰显）
+            try:
+                from selectors.quick_filter import load_legacy_asins
+                legacy = load_legacy_asins()
+                if legacy:
+                    tagged = 0
+                    for r in results:
+                        rec = r.get('rec') or {}
+                        country = r.get('country', '').upper()
+                        for d in (rec.get('detail') or []):
+                            a = (d.get('asin') or '').upper()
+                            if (country, a) in legacy:
+                                d['is_ours'] = True
+                                tagged += 1
+                    print(f'  🏷️  老品库命中: {tagged} 条 ASIN 标记 is_ours=True（库内 {len(legacy)} 条）')
+                else:
+                    print(f'  🏷️  老品库: 未配置（{os.path.join(os.path.dirname(__file__), "legacy_asins.xlsx")}）')
+            except Exception as e:
+                print(f'  ⚠️ 老品库 tag 失败（不影响主流程）: {e}')
             try:
                 os.makedirs(os.path.dirname(KEYWORD_ASINS_JSON), exist_ok=True)
                 # 前端 (selection.html loadAsins) 读 keyword_asins.json.records[country::keyword]
                 # 这里同时写 records (dict by 'country::keyword') 和 items (list)，方便两端消费
+                # 2026-07-30 records 也带上 kw_zh / kw_group，方便前端 record-only 模式渲染
                 records = {
-                    (r['country'] + '::' + r['keyword']): r.get('rec') or {}
+                    (r['country'] + '::' + r['keyword']): {**(r.get('rec') or {}), 'kw_zh': r.get('kw_zh', ''), 'kw_group': r.get('kw_group', '')}
                     for r in results
                 }
                 with open(KEYWORD_ASINS_JSON, 'w', encoding='utf-8') as f:

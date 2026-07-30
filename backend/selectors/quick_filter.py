@@ -29,6 +29,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
 INPUT_DIR = os.path.join(ROOT, "data", "input")
 PROCESSED_DIR = os.path.join(ROOT, "processed", "quick_filter")
 CONFIG_PATH = os.path.join(ROOT, "config", "filters.json")
+# 2026-07-30 老品库：放到 backend/legacy_asins.xlsx（避开 .gitignore 的 backend/data/）
+LEGACY_ASINS_PATH = os.path.join(ROOT, "legacy_asins.xlsx")
 
 # === 国家映射（按你 4 站导出规则） ===
 COUNTRIES = ["US", "UK", "DE", "CA"]
@@ -78,6 +80,35 @@ def find_input_files(input_dir: str) -> list[tuple[str, str]]:
         if country in COUNTRIES:
             found.append((country, fp))
     return found
+
+
+def load_legacy_asins(path: str = LEGACY_ASINS_PATH) -> set[tuple[str, str]]:
+    """
+    2026-07-30 老品库读取：返回 {(country, asin_upper), ...}
+    - 文件不存在 → 空集（首次跑不影响）
+    - 列缺失/空白行 → 静默跳过
+    - 支持单 sheet 即可，复杂的「说明」sheet 不会进数据
+    """
+    if not os.path.isfile(path):
+        return set()
+    try:
+        df = pd.read_excel(path, sheet_name=0, dtype=str)
+    except Exception as e:
+        print(f"[WARN] 读老品库失败 {path}: {e}", file=sys.stderr)
+        return set()
+    if df.empty or "asin" not in df.columns or "country" not in df.columns:
+        return set()
+    out = set()
+    for _, row in df.iterrows():
+        a = str(row.get("asin", "")).strip().upper()
+        c = str(row.get("country", "")).strip().upper()
+        # asin 必须是 B0 开头 + 10 位；country 必须是 US/UK/DE/CA 中的 2 位
+        if not a or not a.startswith("B0") or len(a) != 10:
+            continue
+        if not c or len(c) != 2:
+            continue
+        out.add((c, a))
+    return out
 
 
 def load_all_data(input_dir: str) -> pd.DataFrame:
@@ -179,18 +210,24 @@ def apply_filter(df: pd.DataFrame, cfg: dict) -> tuple[pd.DataFrame, dict]:
     return df_final, stats
 
 
-def to_output_items(df: pd.DataFrame) -> list[dict]:
+def to_output_items(df: pd.DataFrame, legacy: set[tuple[str, str]] | None = None) -> list[dict]:
     """DataFrame → JSON items 列表"""
     cols_metric = [
         "月搜", "月购_calc", "需供比", "价格",
         "评分数", "广告竞品数", "SPR",
         "点击集中度", "转化集中度", "购买率",
     ]
+    legacy = legacy or set()
     items = []
     for _, row in df.iterrows():
+        kw_zh = str(row.get("原关键词中文", "") or "").strip()
+        kw_group = str(row.get("原关键词组", "") or "").strip()
         item = {
             "country": row["_country"],
             "keyword": row["关键词"],
+            # 2026-07-30 透传：原关键词中文（如「猫砂」）+ 原始关键词组（如「cat litter AC\n猫砂」）
+            "kw_zh": kw_zh,
+            "kw_group": kw_group,
             "category_top": row.get("品类组一", ""),
             "category_sub": row.get("品类组", ""),
             "source_file": row.get("_source_file", ""),

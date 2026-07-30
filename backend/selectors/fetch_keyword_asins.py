@@ -150,8 +150,11 @@ EXTRACT_JS = r"""(() => {
     for (const card of cards) {
       const asin = card.getAttribute('data-asin') || '';
       if (!asin || !asin.startsWith('B0') || asin.length !== 10) continue;
-      const titleEl = card.querySelector('h2 span');
-      const title = titleEl ? titleEl.textContent.trim() : '';
+      // 2026-07-30 修复：Amazon SRP 标题常被拆成多个 span（品牌 + 标题 + 副标题），
+      // querySelector('h2 span') 只返第一个（多数情况是品牌名），330/2139 标题 < 30 字符。
+      // 改用 h2.innerText 拼全 + 把 200 截断放宽到 400。
+      const h2 = card.querySelector('h2');
+      const title = h2 ? h2.innerText.replace(/\s+/g, ' ').trim() : '';
       const priceEl = card.querySelector('.a-price .a-offscreen');
       const price = priceEl ? priceEl.textContent.trim() : '';
       const ratingEl = card.querySelector('i.a-icon-star-medium span.a-icon-alt, [aria-label*="out of 5 stars"]');
@@ -171,7 +174,7 @@ EXTRACT_JS = r"""(() => {
       if (!sponsored && /\bSponsored\b/i.test((card.innerText || '').slice(0, 120))) sponsored = true;
       const ssContainer = card.querySelector('[name^="seller-sprite-extension-quick-view-"]');
       const ss_text = ssContainer ? ssContainer.innerText : '';
-      results.push({asin, title: title.slice(0,200), price, rating, reviews, sponsored, ss_text: ss_text.slice(0, 5000)});
+      results.push({asin, title: title.slice(0,400), price, rating, reviews, sponsored, ss_text: ss_text.slice(0, 5000)});
     }
     return results;
   }

@@ -340,7 +340,7 @@ function renderTable(name) {
     return `<tr class="master-row" data-kw="${kw.toLowerCase()}" data-country="${c.toUpperCase()}" data-key="${safeKey}">
       <td class="col-toggle" style="text-align:center"><button class="toggle-btn" data-key="${safeKey}" onclick="toggleExpand(this.dataset.key)" title="展开 ASIN 详情 + 6 个 AI 分析">+</button></td>
       <td class="col-country">${c}</td>
-      <td class="col-kw kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank">${kw}</a></td>
+      <td class="col-kw kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank">${kw}</a>${it.kw_zh ? ' <span class="kw-zh" style="color:#64748b;font-size:11px">（'+escapeHtml(it.kw_zh)+'）</span>' : ''}</td>
       <td class="col-tier">${tier}</td>
       <td class="col-yg" style="text-align:left">${fmtNum(m['月购_calc'])}</td>
       <td class="col-xgb" style="text-align:left">${fmtNum(m['需供比'])}</td>
@@ -859,8 +859,12 @@ function renderExpandRowHtml(rec) {
   const rows = detailArr.map(d => {
     const isNV = nvSet.has(d.asin);
     const isBench = isNV && d.asin === benchASIN;
+    // 2026-07-30 老品库：is_ours=True 表示我们已上架在卖——行标灰、ASIN 列加 🏠 徽标
+    const isOurs = !!d.is_ours;
     let rowStyle = '';
-    if (isBench) {
+    if (isOurs) {
+      rowStyle = 'background:#f1f5f9;border-left:3px solid #94a3b8;opacity:0.7;';
+    } else if (isBench) {
       rowStyle = 'background:#fef9c3;border-left:3px solid #eab308;';
     } else if (isNV) {
       rowStyle = 'background:#f0fdf4;border-left:3px solid #16a34a;';
@@ -875,6 +879,9 @@ function renderExpandRowHtml(rec) {
     const cells = KW_COLS.map(c => {
       let v = d[c.key];
       if (c.key === 'sponsored') v = v ? '✅' : '';
+      if (c.key === 'asin' && isOurs) {
+        v = '🏠 ' + v;  // 2026-07-30 老品库：我们已上架的 ASIN 加房子标识
+      }
       if (c.key === 'title' && isNV) {
         // benchmark 加 ⭐ 前缀方便快速识别
         v = (isBench ? '⭐ ' : '🆕 ') + v;
@@ -899,11 +906,13 @@ function renderExpandRowHtml(rec) {
     '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:0 0 8px;font-size:11px;color:#64748b">' +
       '<span><span style="display:inline-block;width:10px;height:10px;background:#fef9c3;border-left:3px solid #eab308;vertical-align:middle;margin-right:4px"></span>⭐ 对标 ASIN（销量最高的新进有量）</span>' +
       '<span><span style="display:inline-block;width:10px;height:10px;background:#f0fdf4;border-left:3px solid #16a34a;vertical-align:middle;margin-right:4px"></span>🆕 其余新进有量 ASIN</span>' +
+      '<span><span style="display:inline-block;width:10px;height:10px;background:#f1f5f9;border-left:3px solid #94a3b8;vertical-align:middle;margin-right:4px"></span>🏠 我们已上架在卖（老品库命中）</span>' +
     '</div>';
   return '<div class="expand-content">' +
     '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;letter-spacing:.5px">🧠 AI 分析（7 字段）</div>' +
     aiCards +
-    '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin:14px 0 8px;letter-spacing:.5px">📦 ASIN 详情（' + (rec.detail || []).length + ' 个）</div>' +
+    // 2026-07-30 关键词 + 中文翻译：在 ASIN 详情标题前显示，方便展开行看清「这次抓的关键词」
+    '<div style="font-size:13px;font-weight:700;color:#1e293b;margin:14px 0 8px">📦 ASIN 详情（' + (rec.detail || []).length + ' 个） · 关键词：' + escapeHtml(rec.keyword || '') + (rec.kw_zh ? ' <span style="color:#64748b;font-weight:500">（'+escapeHtml(rec.kw_zh)+'）</span>' : '') + '</div>' +
     legend +
     '<table class="data" data-cmtable style="position:relative">' +
       '<colgroup>' + KW_COLS.map(c => '<col style="width:' + c.w + 'px">').join('') + '</colgroup>' +

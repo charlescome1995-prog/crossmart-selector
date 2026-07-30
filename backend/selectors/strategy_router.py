@@ -212,6 +212,11 @@ def main():
                     "rank": it["rank"],
                     "country": it["country"],
                     "keyword": it["keyword"],
+                    # 2026-07-30 透传：原关键词中文 / 原关键词组 / 类目（前端 4 桶表要展示中文）
+                    "kw_zh": it.get("kw_zh", ""),
+                    "kw_group": it.get("kw_group", ""),
+                    "category_top": it.get("category_top", ""),
+                    "category_sub": it.get("category_sub", ""),
                     "tier_from_part_A": it["tier"],
                     "metrics": it["metrics"],
                     "risk_flags": it["risk_flags"],
