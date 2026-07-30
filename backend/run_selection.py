@@ -11,8 +11,9 @@ CrossMart Selector - 选品主入口
 逻辑沿用旧引擎（amazon_ai_kit）：16 核心指标 + 4 策略 + FBA 利润模型。
 本入口负责：动态规整日期列名、复用引擎函数、计算综合评分、输出前端 JSON。
 """
-import sys, os, re, json, glob, time
+import sys, os, re, json, glob, time, subprocess
 from datetime import datetime
+from pathlib import Path
 
 _THIS = os.path.dirname(os.path.abspath(__file__))
 if _THIS not in sys.path:
@@ -551,7 +552,8 @@ def run():
                 for p in products
             ],
         }
-        # 2026-07-29: Hub 上次报 IncompleteRead，加 3 次 retry + 3s/9s/27s 退避
+        # 2026-07-30: Hub API 偶发 IncompleteRead，连续 3 次失败也不能让前端掉队。
+        # 加重试 + git push 自动降级（commit + push 都自愈），保证 selection.html 永远有数据看。
         hub_ok = False
         for attempt in range(1, 4):
             try:
@@ -566,7 +568,11 @@ def run():
                     print(f'   {wait}s 后重试...')
                     time.sleep(wait)
         if not hub_ok:
-            print(f'⚠️ Hub 同步 3 次失败（不阻塞主流程），可手动 git push 补救')
+            print(f'⚠️ Hub 同步 3 次失败，降级到 git push（commit + push 自带重试）...')
+            if _auto_git_push():
+                print(f'✅ git push 自动补刀成功，GitHub Pages 已部署最新数据')
+            else:
+                print(f'⚠️ git push 也未跑通，可手动: git add -A && git commit && git push')
     except Exception as e:
         print(f'⚠️ Hub 同步封装异常（不阻塞主流程）: {e}')
 
@@ -578,6 +584,66 @@ def _dist(products, key):
     for p in products:
         d[p[key]] = d.get(p[key], 0) + 1
     return d
+
+
+def _auto_git_push(max_attempts: int = 3) -> bool:
+    """2026-07-30 新增：Hub API 挂掉时，自动 git commit + push 给 GitHub Pages 救场。
+    跑在工作目录（git 仓库根），所以 cd 到 _THIS 的祖父目录。
+    自带 2/6/18s 指数退避，对应网络抖动场景。
+    返回 True = 推送成功，False = 全部失败。
+    """
+    repo_root = Path(_THIS).parent  # backend/ 的上一层（crossmart-selector/）
+    if not (repo_root / ".git").exists():
+        print(f"   ⚠️ 找不到 .git: {repo_root}，跳过 git push")
+        return False
+
+    msg = (
+        "data: 本周选品（Hub 推送降级自动救场）\n\n"
+        "本 commit 由 run_selection.py 自动触发，前置 Hub API 推送连续失败。\n"
+        "前端数据：frontend/data/{strategy,selection-data,keyword_asins,triage}.json\n\n"
+        "Co-Authored-By: Claude <noreply@anthropic.com>"
+    )
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            print(f"   📦 git add -A (attempt {attempt}/{max_attempts})...")
+            r = subprocess.run(
+                ["git", "add", "-A"],
+                cwd=str(repo_root),
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+            )
+            if r.returncode != 0:
+                raise RuntimeError(f"git add 失败: {r.stderr.strip() or 'unknown'}")
+
+            print(f"   📝 git commit (attempt {attempt}/{max_attempts})...")
+            r = subprocess.run(
+                ["git", "commit", "-m", msg],
+                cwd=str(repo_root),
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+            )
+            # 没有改动（nothing to commit）也算成功
+            if r.returncode != 0 and "nothing to commit" not in r.stdout + r.stderr:
+                raise RuntimeError(f"git commit 失败: {r.stderr.strip() or 'unknown'}")
+
+            print(f"   🚀 git push origin main (attempt {attempt}/{max_attempts})...")
+            r = subprocess.run(
+                ["git", "push", "origin", "main"],
+                cwd=str(repo_root),
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                timeout=180,
+            )
+            if r.returncode != 0:
+                raise RuntimeError(f"git push 失败: {r.stderr.strip() or r.stdout.strip()}")
+
+            print(f"   ✅ git push 成功:\n      {r.stdout.strip().splitlines()[-1] if r.stdout.strip() else 'ok'}")
+            return True
+        except Exception as e:
+            print(f"   ⚠️ git push attempt {attempt}/{max_attempts} 失败: {e}")
+            if attempt < max_attempts:
+                wait = 3 * (3 ** (attempt - 1))  # 3 / 9 — 比 Hub 的少一档
+                print(f"      {wait}s 后重试...")
+                time.sleep(wait)
+    return False
 
 
 if __name__ == '__main__':
