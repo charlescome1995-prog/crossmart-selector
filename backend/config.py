@@ -255,7 +255,7 @@ RESEARCH_CONFIG = {
     "max_supply_chain_risk": 2,
     "priority_levels": ["S", "A", "B", "C"],
     "cache_expire_hours": 24,
-    "max_asins_per_keyword": 20,
+    "max_asins_per_keyword": 150,   # 2026-07-30: 3 页 SRP 容量
     "amazon_site": "us",
     "amazon_language": "en"
 }

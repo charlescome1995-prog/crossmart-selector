@@ -36,7 +36,7 @@ def main():
     print('🚀 CrossMart Selector · 一键端到端')
     print('=' * 70)
     print(f'  PART_A_PLUS       = {os.environ.get("PART_A_PLUS", "1")}（0 = 跳过浏览器抓）')
-    print(f'  PART_A_PLUS_MAX   = {os.environ.get("PART_A_PLUS_MAX_ASINS", "20")} ASIN/词')
+    print(f'  PART_A_PLUS_MAX   = {os.environ.get("PART_A_PLUS_MAX_ASINS", "150")} ASIN/词（3 页 SRP 容量）')
     print(f'  PUSH_HUB          = {os.environ.get("PUSH_HUB", "1")}（0 = 跳过 hub 同步）')
     print()
 

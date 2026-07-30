@@ -41,7 +41,7 @@ from selectors.product_selector import (
 # ── Part A+ 浏览器抓取（2026-07-29 新增：复用 fetch_keyword_asins 主流程）──
 KEYWORD_ASINS_JSON = os.path.join(_THIS, '..', 'frontend', 'data', 'keyword_asins.json')
 PART_A_PLUS_ENABLED = os.environ.get('PART_A_PLUS', '1') == '1'   # 默认开启；不想跑设 PART_A_PLUS=0
-PART_A_PLUS_MAX_ASINS = int(os.environ.get('PART_A_PLUS_MAX_ASINS', '20'))
+PART_A_PLUS_MAX_ASINS = int(os.environ.get('PART_A_PLUS_MAX_ASINS', '150'))   # 2026-07-30: 提到 150（3 页 SRP 容量）
 
 # 兼容新旧两种关键词列名
 KW_COL = '关键词(绿色建议进入，黄色找切入点，粉色观察)'

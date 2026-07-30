@@ -34,6 +34,45 @@ SS_NUDGE_SLEEP = float(os.environ.get("SS_NUDGE_SLEEP", "1.2"))   # 每张卡停
 SS_REQUIRED_FIELDS = ["全部流量词", "自然搜索词", "广告流量词", "搜索推荐词"]  # 严格：4 个流量词必须全部出现
 SS_LOGIN_EXTRA_MAX_SEC = int(os.environ.get("SS_LOGIN_EXTRA_MAX_SEC", "600"))  # 卖家精灵未登录时的额外等待上限（10 分钟）
 
+# ── 2026-07-30 新增：翻页支持（最多 3 页 SRP）──
+SS_MAX_PAGES = int(os.environ.get("SS_MAX_PAGES", "3"))                # 单关键词最多翻几页（Amazon 一页 ~48-60）
+SS_PAGE_BASE_DELAY = float(os.environ.get("SS_PAGE_BASE_DELAY", "2.0"))  # 翻页后等 DOM 重建的兜底延迟
+
+# 翻页 JS：找 Next 按钮（class 严格 + aria-label 兜底）点击；找不到/已禁用就返回 clicked:false
+NEXT_PAGE_JS = r"""(() => {
+  // 主路径：class 写法（Amazon 2024-2026 主流）
+  const a = document.querySelector('a.s-pagination-button.s-pagination-next.s-pagination-next-visible:not(.s-pagination-disabled), a.s-pagination-next:not(.s-pagination-disabled)');
+  if (a) {
+    const r = a.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      const href = a.href;
+      a.click();
+      return {clicked: true, method: 'button', next_href: href};
+    }
+  }
+  // 备用：aria-label="Go to next page" / "Next page"
+  const a2 = document.querySelector('a[aria-label*="next page" i]:not([aria-disabled="true"])');
+  if (a2) {
+    const r = a2.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      a2.click();
+      return {clicked: true, method: 'aria', next_href: a2.href};
+    }
+  }
+  return {clicked: false, reason: 'no_next_button'};
+})()"""
+
+# 翻页后等 DOM 重建：URL 含 &page=N、readyState=complete、卡片数 ≥ 10
+# （page=1 走得是 URL 落到 domain 这个判断）
+WAIT_STATE_JS = r"""(() => {
+  return {
+    url: location.href,
+    card_count: document.querySelectorAll('div[data-component-type="s-search-result"]').length,
+    first_asin: (document.querySelector('div[data-component-type="s-search-result"][data-asin]') || {}).getAttribute?.('data-asin') || null,
+    rs: document.readyState,
+  };
+})()"""
+
 EDGE_EXE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 EDGE_PROFILE_REAL = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge\User Data")
 SELLERSPRITE_EXT = os.path.join(EDGE_PROFILE_REAL, "Default", "Extensions",
@@ -364,15 +403,15 @@ def _is_sufficient(rec):
     return bool(rec.get("ss_converged")) and ratio >= SS_ACCEPT_RATIO
 
 
-def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60, max_retries=3):
-    """带 retry: 若 SS 注入覆盖率不够且未收敛，重新打开 tab 再抓。"""
+def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60, max_retries=3, max_pages=None):
+    """带 retry: 若 SS 注入覆盖率不够且未收敛，重新打开 tab 再抓。max_pages=None → SS_MAX_PAGES。"""
     import websocket
     last_rec = None
     best_rec = None
     best_ratio = -1.0
     for attempt in range(1, max_retries + 1):
         log(f"  attempt {attempt}/{max_retries}")
-        rec = _fetch_srp_attempt(country, keyword, port, timeout)
+        rec = _fetch_srp_attempt(country, keyword, port, timeout, max_pages=max_pages)
         last_rec = rec
         ratio, filled, total = _ss_ratio(rec)
         if ratio > best_ratio:
@@ -388,8 +427,16 @@ def fetch_srp_via_cdp(country, keyword, port=EDGE_CDP_PORT, timeout=60, max_retr
     return best_rec or last_rec
 
 
-def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
-    """单次抓取尝试（原 fetch_srp_via_cdp 主体）。"""
+def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60, max_pages=None):
+    """
+    单次抓取尝试（带翻页：最多 max_pages 页 SRP，2026-07-30 新增）。
+
+    流程：每页都走 navigate/click → 等 DOM → dismiss 弹窗 → 滚动 → 等 SS → extract。
+    跨页去重（按 ASIN），并在每条 ASIN 上标 page 字段（来自哪一页）。
+
+    Args:
+        max_pages: 最多翻几页；None → 用全局 SS_MAX_PAGES
+    """
     import websocket
     tabs = get_tabs(port)
     if not tabs:
@@ -418,80 +465,128 @@ def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
     cmd("Page.enable", t=5)
     cmd("Runtime.enable", t=5)
 
+    if max_pages is None:
+        max_pages = SS_MAX_PAGES
     domain = DOMAIN_MAP.get(country, "amazon.com")
-    url = f"https://{domain}/s?k=" + re.sub(r"\s+", "+", keyword.strip())
-    log(f"  navigate {url}")
-    cmd("Page.enable", t=5)
-    cmd("Page.navigate", {"url": url})
-    # Poll until location.href matches target AND cards exist
-    waited = 0
-    domain = DOMAIN_MAP.get(country, "amazon.com")
-    # Phase 1: wait for navigation + cards (up to 45s)
-    waited = 0
-    while waited < 10000:
-        ev = cmd("Runtime.evaluate", {"expression": "(() => ({url: location.href, rs: document.readyState, cards: document.querySelectorAll(\"div[data-component-type=s-search-result]\").length}))()"}, t=5)
-        v = ev.get("result", {}).get("value", {})
-        if v.get("url", "").find(domain) >= 0 and v.get("rs") == "complete" and v.get("cards", 0) >= 10:
-            break
-        time.sleep(1)
-        waited += 1000
-    # ── 2026-07-30 新增：导航落地后立刻 dismiss 弹窗（cookie/货币切换/location prompt）──
-    # 不同 Amazon 站切换时会弹"要不要换货币"，先点掉避免挡住后续滚动+点击
-    _dismiss_dialogs(cmd)
+    base_url = f"https://{domain}/s?k=" + re.sub(r"\s+", "+", keyword.strip())
 
-    # ── Phase 2: 整页粗滚一遍，先让所有卡片进过一次视口（触发 lazy-load + SS 容器建好）──
-    SCROLL_STEP = 250
-    SCROLL_SLEEP = 1.0
-    for y in range(0, 6000, SCROLL_STEP):
-        cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"}, t=3)
-        time.sleep(SCROLL_SLEEP)
-    # Phase 2 滚动结束再 dismiss 一次（中途可能新弹出）
-    _dismiss_dialogs(cmd)
-    cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
-    time.sleep(2)
+    # 跨页累加
+    all_detail = []
+    seen_asins = set()
+    pages_done = 0
+    any_converged = False
+    total_ss_ready = 0
+    total_ss_total = 0
+    all_no_data = []
 
-    # ── Phase 3: 逐卡等到加载完（不再固定超时跳过）──
-    converged, ss_ready, ss_total, ss_no_data = _wait_ss_all(cmd)
+    try:
+        for page_num in range(1, max_pages + 1):
+            # ── 1) 导航 / 翻页 ──
+            if page_num == 1:
+                log(f"  📄 page 1/{max_pages}: navigate {base_url}")
+                cmd("Page.navigate", {"url": base_url})
+            else:
+                log(f"  📄 page {page_num}/{max_pages}: 点 Next 翻页")
+                click_ev = cmd("Runtime.evaluate", {"expression": NEXT_PAGE_JS, "returnByValue": True}, t=10)
+                click_v = (click_ev or {}).get("result", {}).get("value") or {}
+                if not click_v.get("clicked"):
+                    log(f"  📄 翻页停止：{click_v.get('reason', 'no_next_button')}（page {page_num} 不存在）")
+                    break
+                log(f"  📄 翻了 → {(click_v.get('next_href') or '?')[:80]}")
 
-    cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
-    time.sleep(1)
+            # ── 2) 等 DOM 重建（最多 30s）──
+            waited_ms = 0
+            cards = 0
+            rs = ""
+            cur_url = ""
+            while waited_ms < 30000:
+                ev = cmd("Runtime.evaluate", {"expression": WAIT_STATE_JS, "returnByValue": True}, t=5)
+                v = ev.get("result", {}).get("value") or {}
+                cur_url = v.get("url", "")
+                cards = v.get("card_count", 0) or 0
+                rs = v.get("rs", "")
+                if page_num == 1:
+                    cond = domain in cur_url and rs == "complete" and cards >= 10
+                else:
+                    # 翻页后：URL 出现 page=N（page 1 没有 page 参数但用 has_page=False 区分）
+                    cond = rs == "complete" and cards >= 10 and f"page={page_num}" in cur_url
+                if cond:
+                    break
+                time.sleep(1)
+                waited_ms += 1000
+            if waited_ms >= 30000:
+                log(f"  ⚠ page {page_num} 等 DOM 超时（{waited_ms}ms, cards={cards}, rs={rs}）")
+                break
 
-    result = cmd("Runtime.evaluate", {"expression": EXTRACT_JS, "returnByValue": True, "awaitPromise": True})
-    val = result.get("result", {}).get("value")
-    ws.close()
-    if not val:
+            # ── 3) 导航落地后立刻 dismiss 弹窗 ──
+            _dismiss_dialogs(cmd)
+
+            # ── 4) Phase 2: 整页粗滚一遍，触发 lazy-load + SS 容器建好 ──
+            for y in range(0, 6000, 250):
+                cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"}, t=3)
+                time.sleep(1.0)
+            _dismiss_dialogs(cmd)
+            cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
+            time.sleep(2)
+
+            # ── 5) Phase 3: 逐卡等到 SS 注入完成 ──
+            converged, ss_ready, ss_total, ss_no_data = _wait_ss_all(cmd)
+            pages_done += 1
+            any_converged = any_converged or converged
+            total_ss_ready += ss_ready
+            total_ss_total += ss_total
+            all_no_data.extend(ss_no_data)
+
+            cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
+            time.sleep(1)
+
+            # ── 6) 提取本页 ASINs（跨页去重）──
+            result = cmd("Runtime.evaluate", {"expression": EXTRACT_JS, "returnByValue": True, "awaitPromise": True})
+            val = result.get("result", {}).get("value") or []
+            page_new = 0
+            ss_no_data_set = set(ss_no_data or [])
+            for a in val:
+                asin = a.get("asin")
+                if not asin or asin in seen_asins:
+                    continue
+                seen_asins.add(asin)
+                ss_text = a.get("ss_text", "")
+                ss = parse_ss_text(ss_text)
+                flat = {
+                    "asin": asin,
+                    "title": a.get("title"),
+                    "price": a.get("price"),
+                    "rating": a.get("rating"),
+                    "reviews": a.get("reviews"),
+                    "sponsored": a.get("sponsored"),
+                    "ss_has_ss": bool(ss_text),
+                    **ss,
+                }
+                if asin in ss_no_data_set:
+                    flat["ss_no_data"] = True
+                flat["page"] = page_num   # 2026-07-30 新增：标记来自哪一页
+                all_detail.append(flat)
+                page_new += 1
+            log(f"  📄 page {page_num}: 本页 {len(val)} 张卡，新增 {page_new}（去重后），累计 {len(all_detail)}")
+    finally:
+        try:
+            ws.close()
+        except Exception:
+            pass
+
+    if pages_done == 0:
         return None
-    ss_no_data_set = set(ss_no_data or [])
-    detail = []
-    for a in val:
-        ss_text = a.get("ss_text", "")
-        ss = parse_ss_text(ss_text)
-        # parse_ss_text 返回的 dict key 已经是带 ss_ 前缀的（如 ss_brand, ss_seller），
-        # 直接展开 + 标 has_ss
-        flat = {
-            "asin": a.get("asin"),
-            "title": a.get("title"),
-            "price": a.get("price"),
-            "rating": a.get("rating"),
-            "reviews": a.get("reviews"),
-            "sponsored": a.get("sponsored"),
-            "ss_has_ss": bool(ss_text),
-            # 直接合并 parse_ss_text 输出（key 形如 ss_brand / ss_seller）
-            **ss,
-        }
-        # 标注：这个 ASIN 是「等到确认没数据」而不是「等不及跳过」
-        if flat["asin"] in ss_no_data_set:
-            flat["ss_no_data"] = True
-        detail.append(flat)
     return {
-        "country": country, "keyword": keyword, "asin_count": len(detail),
-        "asin_list": [a["asin"] for a in detail], "detail": detail,
+        "country": country, "keyword": keyword, "asin_count": len(all_detail),
+        "asin_list": [a["asin"] for a in all_detail], "detail": all_detail,
         "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        # SS 等待结果（供 _is_sufficient / 前端诊断用）
-        "ss_converged": converged,
-        "ss_ready": ss_ready,
-        "ss_total": ss_total,
-        "ss_no_data_asins": list(ss_no_data),
+        # SS 等待结果（跨页累加）
+        "ss_converged": any_converged,
+        "ss_ready": total_ss_ready,
+        "ss_total": total_ss_total,
+        "ss_no_data_asins": list(set(all_no_data)),
+        # 2026-07-30 新增
+        "pages_fetched": pages_done,
     }
 
 
@@ -557,24 +652,25 @@ def parse_ss_text(ss_text):
 # ══════════════════════════════════════════════════════════════════════════
 # 顶层包装：run_selection.py Part A+ 调用入口
 # ══════════════════════════════════════════════════════════════════════════
-def fetch_keyword_via_cdp(country, keyword, max_asins=20, port=EDGE_CDP_PORT, timeout=60, max_retries=3):
+def fetch_keyword_via_cdp(country, keyword, max_asins=150, port=EDGE_CDP_PORT, timeout=60, max_retries=3, max_pages=None):
     """
     抓一个关键词的 Amazon SRP（带卖家精灵），返回标准 rec。
 
     Args:
         country: "US"/"UK"/"DE"/"CA"
         keyword: 关键词原始字符串（含空格）
-        max_asins: 截断 detail 到多少条（默认 20；Part A+ 不需要 50 条）
+        max_asins: 截断 detail 到多少条（默认 150，3 页 SRP 容量）
         port: Edge CDP 端口
         timeout/ max_retries: 透传给 fetch_srp_via_cdp
+        max_pages: 最多翻几页（None → SS_MAX_PAGES 环境变量，默认 3）
 
     Returns:
-        dict {country, keyword, asin_count, asin_list, detail, fetched_at, ok, error?}
+        dict {country, keyword, asin_count, asin_list, detail, fetched_at, ok, error?, pages_fetched}
         - ok=True  表示 _is_sufficient() 通过
         - ok=False 表示 SS 不充分但尽力抓了；error 表示完全失败
     """
     try:
-        rec = fetch_srp_via_cdp(country, keyword, port=port, timeout=timeout, max_retries=max_retries)
+        rec = fetch_srp_via_cdp(country, keyword, port=port, timeout=timeout, max_retries=max_retries, max_pages=max_pages)
     except Exception as e:
         log(f"  ✗ fetch_srp_via_cdp 异常: {e}")
         return {
@@ -609,10 +705,11 @@ def fetch_keyword_via_cdp(country, keyword, max_asins=20, port=EDGE_CDP_PORT, ti
         "ss_ready": rec.get("ss_ready"),
         "ss_total": rec.get("ss_total"),
         "ss_no_data_asins": rec.get("ss_no_data_asins") or [],
+        "pages_fetched": rec.get("pages_fetched"),   # 2026-07-30 翻页后透出
     }
 
 
-def fetch_keywords_batch(items, max_asins_per_kw=20, keep_browser=False):
+def fetch_keywords_batch(items, max_asins_per_kw=150, keep_browser=False):
     """
     批量抓取：对 items 里每条 (country, keyword) 调 fetch_keyword_via_cdp。
 
