@@ -629,16 +629,25 @@ def run():
                 break
             except Exception as e:
                 wait = 3 ** attempt  # 3 / 9 / 27
-                print(f'⚠️ Hub 同步 attempt {attempt}/3 失败: {e}')
+                # 2026-07-30 修复：把异常信息压成单行短描述，去掉括号元组（避免 PowerShell 误解析为函数调用）
+                # 同时写到 stderr（PowerShell 不会把 stderr 当下一条命令解析）
+                err_type = type(e).__name__
+                err_msg = str(e).replace('\n', ' ').replace('(', '[').replace(')', ']')[:200]
+                sys.stderr.write(f'⚠️ Hub 同步 attempt {attempt}/3 失败: {err_type} {err_msg}\n')
+                sys.stderr.flush()
                 if attempt < 3:
-                    print(f'   {wait}s 后重试...')
+                    sys.stderr.write(f'   {wait}s 后重试...\n')
+                    sys.stderr.flush()
                     time.sleep(wait)
         if not hub_ok:
-            print(f'⚠️ Hub 同步 3 次失败，降级到 git push（commit + push 自带重试）...')
+            sys.stderr.write(f'⚠️ Hub 同步 3 次失败，降级到 git push（commit + push 自带重试）...\n')
+            sys.stderr.flush()
             if _auto_git_push():
                 print(f'✅ git push 自动补刀成功，GitHub Pages 已部署最新数据')
             else:
-                print(f'⚠️ git push 也未跑通，可手动: git add -A && git commit && git push')
+                # 2026-07-30 修复：PowerShell 不识别 &&，改成 ; 让两边都能直接复制跑
+                print(f'⚠️ git push 也未跑通，可手动跑:')
+                print(f'     git add -A ; git commit -m "data: 本周选品" ; git push')
     except Exception as e:
         print(f'⚠️ Hub 同步封装异常（不阻塞主流程）: {e}')
 
