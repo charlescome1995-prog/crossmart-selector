@@ -597,6 +597,7 @@ SS_REGEX = [
     ("ss_fulfillment", re.compile("\u914d\u9001:\s*([^\n]+)")),
     ("ss_seller_count", re.compile("\u5356\u5bb6\u6570:\s*(\d+)")),
     ("ss_natural_position", re.compile("\u81ea\u7136\u4f4d[:\uff1a]\s*([^\n]+)")),
+    ("ss_ad_position", re.compile("\u5e7f\u544a\u4f4d[:\uff1a]\s*([^\n]+)")),   # 2026-07-30\uff1a\u5e7f\u544a ASIN \u7684\u4f4d\u7f6e\uff08\u4e0e\u81ea\u7136\u4f4d\u4e92\u65a5\uff09
     ("ss_monthly_sales_parent", re.compile("\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u7236\u4f53\):\s*([^*\n]+)")),
     ("ss_monthly_sales_child", re.compile("\u8fd1\s*30\s*\u5929\u9500\u91cf\(\u5b50\u4f53\):\s*([^*\n]+)")),
     ("ss_revenue", re.compile("\u9500\u552e\u989d:\s*([^\n]+)")),

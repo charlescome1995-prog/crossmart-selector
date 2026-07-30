@@ -500,6 +500,15 @@ const _parseDate = v => {
   if (!m) return -Infinity;
   return new Date(+m[1], +m[2] - 1, +m[3]).getTime();
 };
+// 「第1页第3位」→ 3（slot，按同页内位置排；空值 → -Infinity 排末尾）
+// 兜底兼容「第3位」/「3」/「SP 3」等
+const _parsePos = v => {
+  const s = String(v == null ? '' : v);
+  const m = s.match(/第\s*(\d+)\s*页\s*第\s*(\d+)\s*位/);
+  if (m) return +m[2];
+  const nums = s.match(/\d+/g);
+  return nums && nums.length ? +nums[nums.length - 1] : -Infinity;
+};
 
 const KW_COLS = [
   {key:'rank', title:'#', w: 40, type:'num'},
@@ -512,7 +521,9 @@ const KW_COLS = [
   {key:'ss_seller', title:'卖家', w: 140, type:'text'},
   {key:'ss_fulfillment', title:'配送', w: 90, type:'text'},
   {key:'ss_seller_count', title:'卖家数', w: 70, type:'num'},
-  {key:'ss_natural_position', title:'自然位', w: 110, type:'text', parse: _parseNum},
+  {key:'ss_natural_position', title:'自然位', w: 110, type:'text', parse: _parsePos},
+  {key:'ss_ad_position', title:'广告位', w: 110, type:'text', parse: _parsePos},
+  {key:'page', title:'页', w: 50, type:'num'},
   {key:'ss_bsr_main', title:'BSR主类目', w: 200, type:'text', parse: _parseNum},
   {key:'ss_bsr_sub', title:'BSR子类目', w: 200, type:'text', parse: _parseNum},
   {key:'ss_variants', title:'变体数', w: 70, type:'num'},
@@ -555,8 +566,11 @@ function _applySortToTable(table, sortDir) {
   const rows = [...tbody.querySelectorAll('tr[data-asin]')];
   if (!rows.length) return;
   if (!sortDir || !_sortState.key) {
-    // 恢复原序（按 dataset.rank 升序）
-    rows.sort((a, b) => (_parseNum(a.dataset.rank) - _parseNum(b.dataset.rank)));
+    // 恢复原序（按 page 升序，再 ASIN 字典序兜底）
+    rows.sort((a, b) =>
+      (_parseNum(a.dataset.page) - _parseNum(b.dataset.page)) ||
+      String(a.dataset.asin || '').localeCompare(String(b.dataset.asin || ''))
+    );
   } else {
     const col = KW_COLS.find(c => c.key === _sortState.key);
     if (!col) return;
@@ -570,8 +584,9 @@ function _applySortToTable(table, sortDir) {
       else if (va > vb) cmp = 1;
       else cmp = 0;
       if (cmp !== 0) return sortDir === 'asc' ? cmp : -cmp;
-      // 二级排序：回到 dataset.rank（SRP 原始顺序）
-      return _parseNum(a.dataset.rank) - _parseNum(b.dataset.rank);
+      // 二级排序：page 升序（page1 在前，page2 次之）→ 同 page 同 slot 用 ASIN 字典序兜底
+      return (_parseNum(a.dataset.page) - _parseNum(b.dataset.page)) ||
+             String(a.dataset.asin || '').localeCompare(String(b.dataset.asin || ''));
     });
   }
   rows.forEach(r => tbody.appendChild(r));
@@ -826,7 +841,9 @@ function renderExpandRowHtml(rec) {
         const va = parser(x[sk]), vb = parser(y[sk]);
         let cmp = va < vb ? -1 : va > vb ? 1 : 0;
         if (cmp !== 0) return sd === 'asc' ? cmp : -cmp;
-        return _parseNum(x.rank) - _parseNum(y.rank);
+        // 二级：page 升序（page1 在前），同 page 同 slot 用 ASIN 字典序兜底
+        return (_parseNum(x.page) - _parseNum(y.page)) ||
+               String(x.asin || '').localeCompare(String(y.asin || ''));
       });
     }
   }
