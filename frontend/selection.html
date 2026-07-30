@@ -479,7 +479,7 @@ const KW_COLS = [
   {key:'title', title:'标题', w: 280, type:'text'},
   {key:'price', title:'价格', w: 90, type:'text'},
   {key:'rating', title:'评分', w: 100, type:'text'},
-  {key:'reviews', title:'评论数', w: 80, type:'text'},
+  {key:'reviews', title:'评数', w: 70, type:'text'},
   {key:'sponsored', title:'SP', w: 50, type:'text'},
   {key:'ss_brand', title:'品牌', w: 120, type:'text'},
   {key:'ss_seller', title:'卖家', w: 140, type:'text'},
@@ -564,25 +564,67 @@ function analyzeKeyword(rec) {
   const fbaCount = detail.filter(d => /FBA/i.test(d.ss_fulfillment || '')).length;
   const fbmCount = detail.filter(d => /FBM/i.test(d.ss_fulfillment || '')).length;
   const fbaRate = fulfillmentTotal > 0 ? fbaCount / fulfillmentTotal : null;
-  // 5) 新进入者数 = 在售天数 < 90 天的 ASIN 数
-  let daysListedSample = 0, newEntrants = 0;
+  // 5) 🆕 新进有量产品 = 近3月内上架 AND 评分数<100 AND 月销量>100
+  //    来源：每 ASIN 的 ss_days_listed / ss_review_count / ss_monthly_sales_child
+  //    衍生：newVolumeSet（按销量降序，第 1 个 = benchmark 对标 ASIN）
+  const newVolumeSet = [];
+  let nvSample = 0;
   detail.forEach(d => {
-    const m = (d.ss_days_listed || '').match(/(\d+)/);
-    if (m) { daysListedSample++; if (parseInt(m[1]) < 90) newEntrants++; }
+    const days = parseInt((d.ss_days_listed || '').replace(/[^0-9]/g, ''));
+    const rc   = parseInt((d.ss_review_count || '').replace(/[^0-9]/g, ''));
+    const sales = parseInt((d.ss_monthly_sales_child || d.ss_monthly_sales_parent || '').replace(/[^0-9]/g, ''));
+    if (isNaN(days) || isNaN(rc) || isNaN(sales)) return;
+    nvSample++;
+    if (days <= 90 && rc < 100 && sales > 100) {
+      newVolumeSet.push({
+        asin: d.asin, title: d.title,
+        sales, reviewCount: rc, daysListed: days,
+        price: d.price || '',
+      });
+    }
   });
+  newVolumeSet.sort((a, b) => b.sales - a.sales);
+  const newVolumeBenchmark = newVolumeSet[0] || null;
+  const newVolumeSetASINs = new Set(newVolumeSet.map(x => x.asin));   // 表格染色用
+
   // 6) Sponsored 渗透率
   const sponsoredRate = detail.length > 0 ? sponsoredCount / detail.length : 0;
+
+  // 7) 🌐 流量词四元组 → 流量结构健康度 EEI（Entry Ease Index）
+  //    ss_all_traffic_words / ss_organic_keywords / ss_ad_keywords / ss_suggest_keywords
+  const twAll = detail.reduce((a, d) => a + (parseInt(d.ss_all_traffic_words) || 0), 0);
+  const twOrg = detail.reduce((a, d) => a + (parseInt(d.ss_organic_keywords) || 0), 0);
+  const twAd  = detail.reduce((a, d) => a + (parseInt(d.ss_ad_keywords)     || 0), 0);
+  const twSug = detail.reduce((a, d) => a + (parseInt(d.ss_suggest_keywords) || 0), 0);
+  const twSample = detail.filter(d => d.ss_all_traffic_words).length;
+  // 三个比值（任意一个分母 0 → 占比 = 0）
+  const organicShare = twAll > 0 ? twOrg / twAll : 0;   // 自然 / 全部：SEO 主导度
+  const adOverOrganic = twOrg > 0 ? twAd / twOrg : (twAd > 0 ? 99 : 0);  // 广告/自然：PPC 主导度
+  const suggestShare  = twAll > 0 ? twSug / twAll : 0;  // 推荐词 / 全部：长尾空间
+  // EEI = 100 × (organicShare × 0.55 + suggestShare × 0.20 + max(0, 1 - min(adOverOrganic, 2)/2) × 0.25)
+  //      = 「SEO 主导 + 推荐词多 + PPC 不算太贵」加权
+  let eei = 0;
+  let eeiLabel = '—', eeiColor = '#94a3b8', eeiBg = '#f8fafc';
+  if (twSample > 0) {
+    const ppcPenalty = Math.max(0, 1 - Math.min(adOverOrganic, 2) / 2);
+    eei = Math.round((organicShare * 0.55 + suggestShare * 0.20 + ppcPenalty * 0.25) * 100);
+    if (eei >= 60)      { eeiLabel = '易切入·SEO 主导';   eeiColor = '#16a34a'; eeiBg = '#f0fdf4'; }
+    else if (eei >= 35) { eeiLabel = '中等·需补 PPC';     eeiColor = '#ca8a04'; eeiBg = '#fefce8'; }
+    else                { eeiLabel = '红海·广告锁定';     eeiColor = '#dc2626'; eeiBg = '#fef2f2'; }
+  }
 
   return {
     avgPrice, minPrice, maxPrice, avgRating, totalReviews,
     topBrands, topSellers, topBsr, ssCoverage, ssFullCount, sponsoredCount, totalAsins: detail.length,
-    // AI 6 字段
+    // AI 7 字段
     cr3, cr3Sample: brandTotal, top3BrandSum,
     monopoly,
     priceBuckets, priceSample: prices.length,
     fbaRate, fbaCount, fbmCount, fulfillmentTotal,
-    newEntrants, daysListedSample,
-    sponsoredCount, sponsoredRate
+    newVolumeSet, newVolumeBenchmark, newVolumeSetASINs, nvSample,
+    sponsoredCount, sponsoredRate,
+    twAll, twOrg, twAd, twSug, twSample, organicShare, adOverOrganic, suggestShare,
+    eei, eeiLabel, eeiColor, eeiBg,
   };
 }
 
@@ -641,21 +683,43 @@ function renderExpandRowHtml(rec) {
   const a = analyzeKeyword(rec);
   const aiCards = a ? renderAiCards(a, rec) : '<div style="padding:14px;color:#94a3b8">⚠️ ASIN 数据为空，无法生成 AI 分析</div>';
   const thead = KW_COLS.map(c => '<th data-type="' + c.type + '" style="min-width:' + c.w + 'px">' + c.title + '</th>').join('');
+  // 新进有量 ASIN 染色：浅绿底 + 左侧 3px 蓝紫条；benchmark 加金色边
+  const nvSet = (a && a.newVolumeSetASINs) || new Set();
+  const benchASIN = (a && a.newVolumeBenchmark) ? a.newVolumeBenchmark.asin : null;
   const rows = (rec.detail || []).map(d => {
+    const isNV = nvSet.has(d.asin);
+    const isBench = isNV && d.asin === benchASIN;
+    let rowStyle = '';
+    if (isBench) {
+      rowStyle = 'background:#fef9c3;border-left:3px solid #eab308;';
+    } else if (isNV) {
+      rowStyle = 'background:#f0fdf4;border-left:3px solid #16a34a;';
+    }
     const cells = KW_COLS.map(c => {
       let v = d[c.key];
       if (c.key === 'sponsored') v = v ? '✅' : '';
+      if (c.key === 'title' && isNV) {
+        // benchmark 加 ⭐ 前缀方便快速识别
+        v = (isBench ? '⭐ ' : '🆕 ') + v;
+      }
       if (v === undefined || v === null || v === '') v = '<span style="color:#cbd5e1">-</span>';
       const titleAttr = ' title="' + String(v).replace(/"/g, '&quot;') + '"';
       return '<td class="' + (c.type === 'num' ? 'num' : '') + '" style="max-width:' + (c.w+20) + 'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"' + titleAttr + '>' + v + '</td>';
     }).join('');
-    return '<tr>' + cells + '</tr>';
+    return '<tr style="' + rowStyle + '">' + cells + '</tr>';
   }).join('');
   if (!rows) rows = '<tr><td colspan="' + KW_COLS.length + '" style="padding:30px;text-align:center;color:#94a3b8">无 ASIN 数据</td></tr>';
+  // 颜色图例
+  const legend =
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:0 0 8px;font-size:11px;color:#64748b">' +
+      '<span><span style="display:inline-block;width:10px;height:10px;background:#fef9c3;border-left:3px solid #eab308;vertical-align:middle;margin-right:4px"></span>⭐ 对标 ASIN（销量最高的新进有量）</span>' +
+      '<span><span style="display:inline-block;width:10px;height:10px;background:#f0fdf4;border-left:3px solid #16a34a;vertical-align:middle;margin-right:4px"></span>🆕 其余新进有量 ASIN</span>' +
+    '</div>';
   return '<div class="expand-content">' +
-    '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;letter-spacing:.5px">🧠 AI 分析（6 字段）</div>' +
+    '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;letter-spacing:.5px">🧠 AI 分析（7 字段）</div>' +
     aiCards +
     '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin:14px 0 8px;letter-spacing:.5px">📦 ASIN 详情（' + (rec.detail || []).length + ' 个）</div>' +
+    legend +
     '<table class="data"><thead><tr>' + thead + '</tr></thead><tbody>' + rows + '</tbody></table>' +
   '</div>';
 }
@@ -689,28 +753,90 @@ function renderAiCards(a, rec) {
   const fbaTxt = a.fbaRate !== null ? (a.fbaRate * 100).toFixed(0) + '%' : '—';
   const fbaColor = a.fbaRate === null ? '#94a3b8' : a.fbaRate >= 0.7 ? '#dc2626' : a.fbaRate >= 0.4 ? '#ca8a04' : '#16a34a';
   const fbaBg = a.fbaRate === null ? '#f8fafc' : a.fbaRate >= 0.7 ? '#fef2f2' : a.fbaRate >= 0.4 ? '#fefce8' : '#f0fdf4';
-  // 5) 新进入者
-  const ne = a.daysListedSample > 0 ? a.newEntrants : null;
-  const neColor = ne === null ? '#94a3b8' : ne >= 5 ? '#16a34a' : ne >= 2 ? '#ca8a04' : '#dc2626';
-  const neBg = ne === null ? '#f8fafc' : ne >= 5 ? '#f0fdf4' : ne >= 2 ? '#fefce8' : '#fef2f2';
-  const neTxt = ne === null ? '未抓取' : ne + ' 个';
-  const neSub = ne === null ? 'ss_days_listed 缺失' : '< 90 天 / ' + a.daysListedSample + ' 样本';
+  // 5) 🆕 新进有量产品（合并「品牌集中度+垄断」之后腾出的槽位之一被它占）
+  const nv = a.newVolumeSet || [];
+  const bench = a.newVolumeBenchmark;
+  const nvColor = a.nvSample === 0 ? '#94a3b8' : nv.length >= 3 ? '#16a34a' : nv.length >= 1 ? '#ca8a04' : '#dc2626';
+  const nvBg    = a.nvSample === 0 ? '#f8fafc' : nv.length >= 3 ? '#f0fdf4' : nv.length >= 1 ? '#fefce8' : '#fef2f2';
+  const nvMain  = a.nvSample === 0
+    ? '<span style="color:#cbd5e1">—</span>'
+    : '<strong style="font-size:22px;color:' + nvColor + '">' + nv.length + '</strong> <span style="font-size:12px;color:#64748b">个</span>';
+  // 对标 ASIN 行
+  const benchLine = bench
+    ? '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0;font-size:11px;color:#475569;line-height:1.5">' +
+        '⭐ 对标: <strong>' + escapeHtml((bench.title || '').slice(0, 30)) + '</strong>' +
+        (bench.title && bench.title.length > 30 ? '…' : '') +
+        '<br><span style="color:#94a3b8">月销 ' + fmtNum(bench.sales) + ' · 评 ' + fmtNum(bench.reviewCount) + ' · ' + bench.daysListed + ' 天</span>' +
+      '</div>'
+    : (a.nvSample > 0
+        ? '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0;font-size:11px;color:#94a3b8">无销量&gt;100 的新进 ASIN</div>'
+        : '');
+  // 其余新进有量 ASIN 列表（最多列 4 个 +「+N more」）
+  const nvRest = nv.slice(1);
+  const restLine = nvRest.length
+    ? '<div style="margin-top:4px;font-size:10px;color:#64748b;line-height:1.4">' +
+        nvRest.slice(0, 4).map(x => {
+          const t = (x.title || '').slice(0, 22) + ((x.title || '').length > 22 ? '…' : '');
+          return '· ' + escapeHtml(t) + ' <span style="color:#94a3b8">(' + fmtNum(x.sales) + ')</span>';
+        }).join('<br>') +
+        (nvRest.length > 4 ? '<br><span style="color:#94a3b8">…还有 ' + (nvRest.length - 4) + ' 个</span>' : '') +
+      '</div>'
+    : '';
+  const nvCard =
+    '<div style="flex:1;min-width:240px;background:' + nvBg + ';border-left:4px solid ' + nvColor + ';padding:10px 12px;border-radius:6px">' +
+      '<div style="font-size:11px;color:#64748b;font-weight:600;letter-spacing:.3px">🆕 新进有量产品 <span style="font-weight:400;color:#94a3b8">&lt;3 月 · &lt;100 评 · 月销&gt;100</span></div>' +
+      '<div style="font-size:22px;color:' + nvColor + ';font-weight:700;margin:4px 0">' + nvMain + '</div>' +
+      '<div style="font-size:11px;color:#64748b">' + (a.nvSample > 0 ? a.nvSample + ' 个有上架天数样本' : '无样本') + '</div>' +
+      benchLine + restLine +
+    '</div>';
   // 6) SP%
   const sprTxt = a.totalAsins > 0 ? (a.sponsoredRate * 100).toFixed(0) + '%' : '—';
   const sprColor = a.sponsoredRate === 0 ? '#94a3b8' : a.sponsoredRate >= 0.6 ? '#dc2626' : a.sponsoredRate >= 0.3 ? '#ca8a04' : '#16a34a';
   const sprBg = a.sponsoredRate === 0 ? '#f8fafc' : a.sponsoredRate >= 0.6 ? '#fef2f2' : a.sponsoredRate >= 0.3 ? '#fefce8' : '#f0fdf4';
 
+  // 7) 🌐 流量结构健康度 EEI（合并品牌集中度/垄断 → 新指标）
+  const eeiHasData = a.twSample > 0;
+  // mini-bar 三段：有机（绿）/ 广告（橙）/ 推荐（蓝），按 all 占比
+  const twBar = eeiHasData && a.twAll > 0 ? `
+    <div style="display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:4px">
+      <div style="background:#22c55e;width:${(a.twOrg/a.twAll*100).toFixed(1)}%"></div>
+      <div style="background:#f97316;width:${(a.twAd/a.twAll*100).toFixed(1)}%"></div>
+      <div style="background:#0ea5e9;width:${(a.twSug/a.twAll*100).toFixed(1)}%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-top:2px">
+      <span>自然 ${a.twOrg}</span><span>广告 ${a.twAd}</span><span>推荐 ${a.twSug}</span>
+    </div>` : '<div style="color:#cbd5e1;font-size:11px">—</div>';
+  const eeiMain = eeiHasData
+    ? '<strong style="font-size:22px;color:' + a.eeiColor + '">' + a.eei + '</strong><span style="font-size:12px;color:#94a3b8"> /100</span>'
+    : '<span style="color:#cbd5e1">—</span>';
+  const eeiSub = eeiHasData
+    ? '有 ' + a.twAll + ' 个流量词 / ' + a.twSample + ' ASIN'
+    : 'ss_*_keywords 缺失';
+  const eeiCard =
+    '<div style="flex:1;min-width:180px;background:' + a.eeiBg + ';border-left:4px solid ' + a.eeiColor + ';padding:10px 12px;border-radius:6px">' +
+      '<div style="font-size:11px;color:#64748b;font-weight:600;letter-spacing:.3px">🌐 流量结构健康度 EEI</div>' +
+      '<div style="font-size:22px;color:' + a.eeiColor + ';font-weight:700;margin:4px 0">' + eeiMain + '</div>' +
+      '<div style="font-size:11px;color:' + a.eeiColor + ';font-weight:600">' + a.eeiLabel + '</div>' +
+      '<div style="font-size:11px;color:#64748b">' + eeiSub + '</div>' +
+      twBar +
+    '</div>';
+
   return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
-    card('🏷️ 品牌集中度 CR3', cr3Txt, 'Top3 品牌 / 总有牌 ASIN', cr3Color, cr3Bg) +
-    card('🎯 品牌垄断判定', (mono.emoji || '⚪') + ' ' + mono.label, a.cr3Sample + ' 个有牌 ASIN', mono.color, '#f8fafc') +
+    // 合并 1+2：品牌集中度 / 垄断判定 合一
+    '<div style="flex:1;min-width:200px;background:' + cr3Bg + ';border-left:4px solid ' + cr3Color + ';padding:10px 12px;border-radius:6px">' +
+      '<div style="font-size:11px;color:#64748b;font-weight:600;letter-spacing:.3px">🏷️ 品牌集中度 · 垄断</div>' +
+      '<div style="font-size:22px;color:' + cr3Color + ';font-weight:700;margin:4px 0">' + cr3Txt + ' <span style="font-size:14px;color:' + mono.color + '">' + (mono.emoji || '⚪') + ' ' + mono.label + '</span></div>' +
+      '<div style="font-size:11px;color:#64748b">Top3 品牌 / ' + a.cr3Sample + ' 个有牌 ASIN</div>' +
+    '</div>' +
     '<div style="flex:1;min-width:160px;background:#f8fafc;border-left:4px solid #94a3b8;padding:10px 12px;border-radius:6px">' +
       '<div style="font-size:11px;color:#64748b;font-weight:600">💰 价格分层</div>' +
       '<div style="font-size:22px;color:#1e293b;font-weight:700;margin:4px 0">$' + (a.avgPrice || 0).toFixed(0) + ' <span style="font-size:12px;color:#94a3b8">均</span></div>' +
       priceBar +
     '</div>' +
     card('📦 FBA 渗透率', fbaTxt, a.fbaCount + ' FBA / ' + a.fulfillmentTotal + ' 有配送', fbaColor, fbaBg) +
-    card('🆕 新进入者', neTxt, neSub, neColor, neBg) +
+    nvCard +
     card('💸 SP 广告渗透', sprTxt, a.sponsoredCount + ' SP / ' + a.totalAsins + ' ASIN', sprColor, sprBg) +
+    eeiCard +
   '</div>';
 }
 
