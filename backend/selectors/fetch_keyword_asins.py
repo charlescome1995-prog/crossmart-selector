@@ -30,6 +30,10 @@ SS_ACCEPT_RATIO = float(os.environ.get("SS_ACCEPT_RATIO", "0.5")) # 已收敛（
 SS_NUDGE_BATCH = int(os.environ.get("SS_NUDGE_BATCH", "6"))       # 每轮滚多少张 pending 卡
 SS_NUDGE_SLEEP = float(os.environ.get("SS_NUDGE_SLEEP", "1.2"))   # 每张卡停留时长
 
+# ── 2026-07-30 新增：ready 标准升级 + 弹窗免疫 + 登录态长等 ──
+SS_REQUIRED_FIELDS = ["全部流量词", "自然搜索词", "广告流量词", "搜索推荐词"]  # 严格：4 个流量词必须全部出现
+SS_LOGIN_EXTRA_MAX_SEC = int(os.environ.get("SS_LOGIN_EXTRA_MAX_SEC", "600"))  # 卖家精灵未登录时的额外等待上限（10 分钟）
+
 EDGE_EXE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 EDGE_PROFILE_REAL = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge\User Data")
 SELLERSPRITE_EXT = os.path.join(EDGE_PROFILE_REAL, "Default", "Extensions",
@@ -142,19 +146,86 @@ EXTRACT_JS = r"""(() => {
 
 SS_SELECTOR = '[name^="seller-sprite-extension-quick-view-"]'
 
+# 弹窗免疫：dismiss Amazon 跨站弹窗（cookie / 货币切换 / location prompt）
+# 2026-07-30 新增：每轮 probe 前自动跑一次，确保不会卡死
+DISMISS_DIALOGS_JS = r"""(() => {
+  const clicks = [];
+  const visible = (el) => {
+    if (!el) return false;
+    if (el.offsetParent === null) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  };
+
+  // 1) cookie consent
+  document.querySelectorAll('#sp-cc-accept, #sp-cc-reject-all-link, [data-testid="sp-cc-accept"]').forEach(b => {
+    if (visible(b)) { b.click(); clicks.push('cookie:' + (b.innerText||'').slice(0,20)); }
+  });
+
+  // 2) 货币切换 / 区域 / "不变" 类弹窗（按 Amazon 2024-2026 实际常见文案）
+  //    "Stay with US Dollar" "Use US Dollar" "Continue with USD"
+  //    "Keep using USD" "Stay with USD" "Keep your current settings"
+  //    中文："继续使用美元" "保持当前货币"
+  //    逻辑：scan 所有 visible button/anchor，找"保留"语义（不动 USD/$）
+  document.querySelectorAll('button, input[type="submit"], a.a-button, a[role="button"]').forEach(b => {
+    if (!visible(b)) return;
+    const t = (b.innerText || b.value || b.getAttribute('aria-label') || '').trim();
+    if (!t) return;
+    // 不变货币
+    if (/^(stay with|keep using|continue with|use|保持|继续)/i.test(t) &&
+        /(usd|us ?\$|us dollar|美金|美元)/i.test(t)) {
+      b.click(); clicks.push('currency_keep:' + t.slice(0,40)); return;
+    }
+    // 不变地区
+    if (/^(stay with|continue with|保持|继续).*(english|默认|current)/i.test(t)) {
+      b.click(); clicks.push('region_keep:' + t.slice(0,40)); return;
+    }
+    // 通用拒绝
+    if (/^(no,? thanks|not now|稍后|下次再说|以后再说|保持原样)/i.test(t)) {
+      b.click(); clicks.push('decline:' + t.slice(0,30)); return;
+    }
+  });
+
+  // 3) ESC 兜底：任何 [role="dialog"] 没被上面清掉的
+  const dialogs = document.querySelectorAll('[role="dialog"]');
+  if (dialogs.length > 0) {
+    document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true}));
+    // 再试一次：dialog 内的 close 按钮
+    dialogs.forEach(d => {
+      const closeBtn = d.querySelector('button[aria-label*="lose" i], button[aria-label*="ismiss" i]');
+      if (closeBtn && visible(closeBtn)) { closeBtn.click(); clicks.push('close_btn'); }
+    });
+    if (clicks.length === 0) clicks.push('esc');
+  }
+
+  return clicks;
+})()"""
+
 # 逐卡体检：每张 search-result 卡的 SS 容器是否已经注入满字段
+# 2026-07-30 升级：双门槛 = innerText.length ≥ MINLEN AND 4 个流量词字段全部命中
 SS_STATUS_JS = """(() => {
   const MINLEN = %(minlen)d;
+  const NEEDED = ['全部流量词', '自然搜索词', '广告流量词', '搜索推荐词'];
   const cards = document.querySelectorAll('div[data-component-type="s-search-result"]');
-  const ready = [], pending = [];
+  const ready = [], pending = [], details = [], no_ss = [];
   for (const c of cards) {
     const asin = c.getAttribute('data-asin') || '';
     if (!asin.startsWith('B0') || asin.length !== 10) continue;
     const box = c.querySelector('%(sel)s');
-    const len = box ? (box.innerText || '').length : 0;
-    (len >= MINLEN ? ready : pending).push(asin);
+    if (!box) { no_ss.push(asin); pending.push(asin); continue; }
+    const txt = box.innerText || '';
+    const len = txt.length;
+    const missing = NEEDED.filter(s => !txt.includes(s));
+    const fieldsOk = missing.length === 0;
+    const lenOk = len >= MINLEN;
+    if (lenOk && fieldsOk) {
+      ready.push(asin);
+    } else {
+      pending.push(asin);
+      details.push({asin, len, missing, lenOk, fieldsOk});
+    }
   }
-  return {total: ready.length + pending.length, ready: ready.length, pending: pending};
+  return {total: ready.length + pending.length, ready: ready.length, pending: pending, details, no_ss};
 })()"""
 
 # 把指定 ASIN 的卡滚到视口正中，逼卖家精灵的 IntersectionObserver 开工
@@ -166,55 +237,102 @@ SS_NUDGE_JS = """(() => {
 })()"""
 
 
+def _dismiss_dialogs(cmd, log_prefix="  "):
+    """Dismiss Amazon cross-region dialogs (cookie / currency / location).
+    Returns list of click labels so caller can log them.
+    只在真有 click 时打印（避免 Amazon 隐式 dialog 触发 esc 时的日志噪音）。
+    """
+    try:
+        ev = cmd("Runtime.evaluate",
+                 {"expression": DISMISS_DIALOGS_JS, "returnByValue": True}, t=10)
+        v = ev.get("result", {}).get("value")
+        clicks = v if isinstance(v, list) else []
+        # 只 log 真有具体点击的；纯 esc 兜底且无可见 dialog → 静默
+        real_clicks = [c for c in clicks if c != 'esc']
+        if real_clicks:
+            log(f"{log_prefix}🚫 dismiss 弹窗 × {len(real_clicks)}: {', '.join(real_clicks)}")
+        return clicks
+    except Exception as e:
+        log(f"{log_prefix}⚠ dismiss_dialogs 异常（不阻塞）: {e}")
+        return []
+
+
 def _wait_ss_all(cmd, log_prefix="  "):
     """
-    等到每一张卡的卖家精灵字段都注入完成，而不是超时就跳过。
+    等到每一张卡的卖家精灵字段都注入完成（含 4 个流量词字段），而不是超时就跳过。
 
-    做法：反复把「还空着」的卡滚进视口逼扩展加载；某张卡被喂过
-    SS_CARD_NUDGES 次视口仍然空，才认定它真的没有数据（卖家精灵查不到），
-    从待办里划掉。全部待办清空 = 收敛。
+    2026-07-30 升级：
+    - ready 双门槛 = innerText.length ≥ MINLEN AND 4 个流量词字段标记全部命中
+    - 每轮 probe 前先 dismiss Amazon 弹窗（防 Phase 2 滚动触发的货币切换挡住后续）
+    - 若所有 pending 卡的 SS 容器持续为空 → 判定「卖家精灵未登录」→ 延长等待 SS_LOGIN_EXTRA_MAX_SEC
 
     Returns: (converged: bool, ready: int, total: int, no_data: list[str])
     """
     status_js = SS_STATUS_JS % {"minlen": SS_READY_MINLEN, "sel": SS_SELECTOR}
     deadline = time.time() + SS_WAIT_MAX_SEC
-    nudges = {}          # asin -> 已喂视口次数
+    login_deadline = None   # 进入登录态等待模式的截止时间；None = 未进入
+    nudges = {}             # asin -> 已喂视口次数
     ready = total = 0
-    rr = 0               # 轮转起点，保证每张待办卡都轮得到
+    rr = 0                  # 轮转起点
 
     def probe():
         ev = cmd("Runtime.evaluate", {"expression": status_js, "returnByValue": True}, t=10)
         v = ev.get("result", {}).get("value")
         return v if isinstance(v, dict) else {}
 
-    while time.time() < deadline:
+    while time.time() < deadline and (login_deadline is None or time.time() < login_deadline):
+        # 每轮先 dismiss 弹窗（防 Phase 2 滚动触发货币切换）
+        _dismiss_dialogs(cmd, log_prefix)
+
         st = probe()
         total = st.get("total", 0) or 0
         ready = st.get("ready", 0) or 0
         pending = st.get("pending") or []
+        details = st.get("details") or []
         if total == 0:
             time.sleep(1)
             continue
-        # 达标条件：一张不剩（不是「够多了就走」）
+        # 达标：一张不剩
         if not pending:
-            log(f"{log_prefix}✓ SS 全部就位 {ready}/{total} (100%)")
+            log(f"{log_prefix}✓ SS 全部就位 {ready}/{total} (100%, 4 流量词齐全)")
             return True, ready, total, []
-        # 还没喂够次数的卡 = 值得继续等
+
+        # 登录态判定：所有 pending 卡的 SS 容器都空 → 大概率扩展未登录
+        # 进入「长等模式」：停止 nudges 计数，只滚动等登录；登录后会自然注入
+        if details and all(d.get("len", 0) == 0 for d in details):
+            if login_deadline is None:
+                login_deadline = time.time() + SS_LOGIN_EXTRA_MAX_SEC
+                log(f"{log_prefix}⚠ 所有 pending 卡的 SS 容器持续为空 → 判定卖家精灵未登录，"
+                    f"额外等 {SS_LOGIN_EXTRA_MAX_SEC}s（登录后扩展会自动注入）")
+            # 长等模式：每轮只滚动少量卡，不计 nudges（给登录留时间）
+            login_batch = [d["asin"] for d in details[:SS_NUDGE_BATCH]]
+            for asin in login_batch:
+                cmd("Runtime.evaluate", {"expression": SS_NUDGE_JS % {"asin": asin}}, t=5)
+                time.sleep(SS_NUDGE_SLEEP)
+            continue
+
+        # 正常逐卡喂视口
         todo = [a for a in pending if nudges.get(a, 0) < SS_CARD_NUDGES]
         if not todo:
             no_data = list(pending)
             log(f"{log_prefix}✓ SS 收敛 {ready}/{total}；{len(no_data)} 个 ASIN 喂满 "
-                f"{SS_CARD_NUDGES} 次仍无数据（判定卖家精灵确实没有）")
+                f"{SS_CARD_NUDGES} 次仍无 4 流量词字段（判定卖家精灵确实没有）")
             return True, ready, total, no_data
         batch = [todo[(rr + i) % len(todo)] for i in range(min(SS_NUDGE_BATCH, len(todo)))]
         rr += len(batch)
-        log(f"{log_prefix}… SS {ready}/{total} 就位，待等 {len(todo)} 张，本轮喂 {len(batch)} 张")
+        # 日志：找一张本轮要喂的卡的 missing 字段作为样本
+        sample = next((d for d in details if d["asin"] in batch), None)
+        sample_str = ""
+        if sample and sample.get("missing"):
+            sample_str = f"  例 {sample['asin'][-6:]} len={sample['len']} 缺 {sample['missing']}"
+        log(f"{log_prefix}… SS {ready}/{total} 就位，待等 {len(todo)} 张，本轮喂 {len(batch)} 张{sample_str}")
         for asin in batch:
             cmd("Runtime.evaluate", {"expression": SS_NUDGE_JS % {"asin": asin}}, t=5)
             nudges[asin] = nudges.get(asin, 0) + 1
             time.sleep(SS_NUDGE_SLEEP)
 
-    log(f"{log_prefix}⚠ SS 等待触顶 {SS_WAIT_MAX_SEC}s，当前 {ready}/{total}（会触发 retry）")
+    log(f"{log_prefix}⚠ SS 等待触顶 {SS_WAIT_MAX_SEC}s（+登录态长等 {SS_LOGIN_EXTRA_MAX_SEC if login_deadline else 0}s），"
+        f"当前 {ready}/{total}（会触发 retry）")
     return False, ready, total, []
 
 
@@ -317,12 +435,18 @@ def _fetch_srp_attempt(country, keyword, port=EDGE_CDP_PORT, timeout=60):
             break
         time.sleep(1)
         waited += 1000
+    # ── 2026-07-30 新增：导航落地后立刻 dismiss 弹窗（cookie/货币切换/location prompt）──
+    # 不同 Amazon 站切换时会弹"要不要换货币"，先点掉避免挡住后续滚动+点击
+    _dismiss_dialogs(cmd)
+
     # ── Phase 2: 整页粗滚一遍，先让所有卡片进过一次视口（触发 lazy-load + SS 容器建好）──
     SCROLL_STEP = 250
     SCROLL_SLEEP = 1.0
     for y in range(0, 6000, SCROLL_STEP):
         cmd("Runtime.evaluate", {"expression": f"window.scrollTo(0, {y})"}, t=3)
         time.sleep(SCROLL_SLEEP)
+    # Phase 2 滚动结束再 dismiss 一次（中途可能新弹出）
+    _dismiss_dialogs(cmd)
     cmd("Runtime.evaluate", {"expression": "window.scrollTo(0, 0)"}, t=3)
     time.sleep(2)
 
