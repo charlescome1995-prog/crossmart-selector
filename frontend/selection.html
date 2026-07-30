@@ -336,11 +336,11 @@ function renderTable(name) {
       <td class="col-tier">${tier}</td>
       <td class="col-yg" style="text-align:left">${fmtNum(m['月购_calc'])}</td>
       <td class="col-xgb" style="text-align:left">${fmtNum(m['需供比'])}</td>
-      <td class="col-pfs num">${fmtNum(m['评分数'])}</td>
-      <td class="col-spr num">${fmtNum(m['SPR'])}</td>
-      <td class="col-ad num">${fmtNum(m['广告竞品数'])}</td>
-      <td class="col-price num">${m['价格'] ? '$' + Number(m['价格']).toFixed(2) : '-'}</td>
-      <td class="col-score num"><span class="${scCls}" style="padding:2px 8px;border-radius:4px">${scTxt}</span></td>
+      <td class="col-pfs" style="text-align:left">${fmtNum(m['评分数'])}</td>
+      <td class="col-spr" style="text-align:left">${fmtNum(m['SPR'])}</td>
+      <td class="col-ad" style="text-align:left">${fmtNum(m['广告竞品数'])}</td>
+      <td class="col-price" style="text-align:left">${m['价格'] ? '$' + Number(m['价格']).toFixed(2) : '-'}</td>
+      <td class="col-score" style="text-align:left"><span class="${scCls}" style="padding:2px 8px;border-radius:4px">${scTxt}</span></td>
       <td class="col-legacy">${legacy}</td>
     </tr>`;
   }).join('');
@@ -478,8 +478,7 @@ const KW_COLS = [
   {key:'asin', title:'ASIN', w: 110, type:'text'},
   {key:'title', title:'标题', w: 280, type:'text'},
   {key:'price', title:'价格', w: 90, type:'text'},
-  {key:'rating', title:'评分', w: 100, type:'text'},
-  {key:'reviews', title:'评数', w: 70, type:'text'},
+  {key:'rating', title:'评分值', w: 100, type:'text'},
   {key:'sponsored', title:'SP', w: 50, type:'text'},
   {key:'ss_brand', title:'品牌', w: 120, type:'text'},
   {key:'ss_seller', title:'卖家', w: 140, type:'text'},
@@ -496,7 +495,7 @@ const KW_COLS = [
   {key:'ss_margin', title:'毛利率', w: 80, type:'text'},
   {key:'ss_price', title:'SS价', w: 80, type:'text'},
   {key:'ss_rating', title:'SS评分', w: 80, type:'text'},
-  {key:'ss_review_count', title:'SS评分数', w: 80, type:'text'},
+  {key:'ss_review_count', title:'评论数', w: 80, type:'text'},
   {key:'ss_delivery_days', title:'配送时长', w: 80, type:'text'},
   {key:'ss_prime_days', title:'Prime时长', w: 80, type:'text'},
   {key:'ss_launch_date', title:'上架时间', w: 100, type:'text'},
@@ -564,6 +563,23 @@ function analyzeKeyword(rec) {
   const fbaCount = detail.filter(d => /FBA/i.test(d.ss_fulfillment || '')).length;
   const fbmCount = detail.filter(d => /FBM/i.test(d.ss_fulfillment || '')).length;
   const fbaRate = fulfillmentTotal > 0 ? fbaCount / fulfillmentTotal : null;
+  // 4b) FBA 产品价格分布（FBA 子集内的 <$20 / $20-50 / >$50）
+  //    亚马逊上 FBA 默认接近 100%，所以渗透率没意义；
+  //    真正要看的是 FBA 产品在不同价格段的分布，判断竞争层。
+  const fbaPrices = [];
+  detail.forEach(d => {
+    if (!/FBA/i.test(d.ss_fulfillment || '')) return;
+    const p = parseFloat((d.price || '').replace(/[^0-9.]/g, ''));
+    if (!isNaN(p) && p > 0) fbaPrices.push(p);
+  });
+  const fbaPriceBuckets = {low: 0, mid: 0, high: 0};
+  fbaPrices.forEach(p => {
+    if (p < 20)        fbaPriceBuckets.low++;
+    else if (p <= 50)  fbaPriceBuckets.mid++;
+    else               fbaPriceBuckets.high++;
+  });
+  const fbaPriceSample = fbaPrices.length;
+  const fbaAvgPrice = fbaPriceSample ? fbaPrices.reduce((a, b) => a + b, 0) / fbaPriceSample : 0;
   // 5) 🆕 新进有量产品 = 近3月内上架 AND 评分数<100 AND 月销量>100
   //    来源：每 ASIN 的 ss_days_listed / ss_review_count / ss_monthly_sales_child
   //    衍生：newVolumeSet（按销量降序，第 1 个 = benchmark 对标 ASIN）
@@ -621,6 +637,7 @@ function analyzeKeyword(rec) {
     monopoly,
     priceBuckets, priceSample: prices.length,
     fbaRate, fbaCount, fbmCount, fulfillmentTotal,
+    fbaPriceBuckets, fbaPriceSample, fbaAvgPrice,
     newVolumeSet, newVolumeBenchmark, newVolumeSetASINs, nvSample,
     sponsoredCount, sponsoredRate,
     twAll, twOrg, twAd, twSug, twSample, organicShare, adOverOrganic, suggestShare,
@@ -682,7 +699,7 @@ function findStrategyItem(s, country, keyword) {
 function renderExpandRowHtml(rec) {
   const a = analyzeKeyword(rec);
   const aiCards = a ? renderAiCards(a, rec) : '<div style="padding:14px;color:#94a3b8">⚠️ ASIN 数据为空，无法生成 AI 分析</div>';
-  const thead = KW_COLS.map(c => '<th data-type="' + c.type + '" style="min-width:' + c.w + 'px">' + c.title + '</th>').join('');
+  const thead = KW_COLS.map(c => '<th data-type="' + c.type + '" title="' + c.title + '" style="min-width:' + c.w + 'px">' + c.title + '</th>').join('');
   // 新进有量 ASIN 染色：浅绿底 + 左侧 3px 蓝紫条；benchmark 加金色边
   const nvSet = (a && a.newVolumeSetASINs) || new Set();
   const benchASIN = (a && a.newVolumeBenchmark) ? a.newVolumeBenchmark.asin : null;
@@ -701,6 +718,14 @@ function renderExpandRowHtml(rec) {
       if (c.key === 'title' && isNV) {
         // benchmark 加 ⭐ 前缀方便快速识别
         v = (isBench ? '⭐ ' : '🆕 ') + v;
+      }
+      // 「评论数」列清洗：去掉「评论数 1,008 ratings」「1,008 评论数」之类包装，只留纯数字
+      if (c.key === 'ss_review_count') {
+        if (v !== undefined && v !== null && v !== '') {
+          const numStr = String(v).replace(/评论数|ratings|rating/g, '').replace(/[^0-9]/g, '');
+          const num = parseInt(numStr, 10);
+          v = (!isNaN(num) && numStr !== '') ? num.toLocaleString() : '';
+        }
       }
       if (v === undefined || v === null || v === '') v = '<span style="color:#cbd5e1">-</span>';
       const titleAttr = ' title="' + String(v).replace(/"/g, '&quot;') + '"';
@@ -749,10 +774,21 @@ function renderAiCards(a, rec) {
     <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:2px">
       <span>&lt;$20 ${pb.low}</span><span>$20-50 ${pb.mid}</span><span>&gt;$50 ${pb.high}</span>
     </div>` : '<div style="color:#cbd5e1">—</div>';
-  // 4) FBA%
-  const fbaTxt = a.fbaRate !== null ? (a.fbaRate * 100).toFixed(0) + '%' : '—';
-  const fbaColor = a.fbaRate === null ? '#94a3b8' : a.fbaRate >= 0.7 ? '#dc2626' : a.fbaRate >= 0.4 ? '#ca8a04' : '#16a34a';
-  const fbaBg = a.fbaRate === null ? '#f8fafc' : a.fbaRate >= 0.7 ? '#fef2f2' : a.fbaRate >= 0.4 ? '#fefce8' : '#f0fdf4';
+  // 4) FBA 产品价格分布（FBA 子集做价格分层）
+  //    主数字 = FBA 平均价；mini-bar = FBA 三段价格分布
+  const fpb = a.fbaPriceBuckets, fps = a.fbaPriceSample || 0;
+  const fbaMain = fps
+    ? '<strong style="font-size:22px;color:#1e293b">$' + (a.fbaAvgPrice || 0).toFixed(0) + '</strong><span style="font-size:12px;color:#94a3b8"> 均 · ' + fps + ' FBA</span>'
+    : '<span style="color:#cbd5e1">—</span>';
+  const fbaBar = fps ? `
+    <div style="display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:4px">
+      <div style="background:#22c55e;width:${(fpb.low/fps*100).toFixed(1)}%"></div>
+      <div style="background:#eab308;width:${(fpb.mid/fps*100).toFixed(1)}%"></div>
+      <div style="background:#ef4444;width:${(fpb.high/fps*100).toFixed(1)}%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-top:2px">
+      <span>&lt;$20 ${fpb.low}</span><span>$20-50 ${fpb.mid}</span><span>&gt;$50 ${fpb.high}</span>
+    </div>` : '<div style="color:#cbd5e1;font-size:11px">—</div>';
   // 5) 🆕 新进有量产品（合并「品牌集中度+垄断」之后腾出的槽位之一被它占）
   const nv = a.newVolumeSet || [];
   const bench = a.newVolumeBenchmark;
@@ -833,7 +869,12 @@ function renderAiCards(a, rec) {
       '<div style="font-size:22px;color:#1e293b;font-weight:700;margin:4px 0">$' + (a.avgPrice || 0).toFixed(0) + ' <span style="font-size:12px;color:#94a3b8">均</span></div>' +
       priceBar +
     '</div>' +
-    card('📦 FBA 渗透率', fbaTxt, a.fbaCount + ' FBA / ' + a.fulfillmentTotal + ' 有配送', fbaColor, fbaBg) +
+    '<div style="flex:1;min-width:160px;background:#f8fafc;border-left:4px solid #1e293b;padding:10px 12px;border-radius:6px">' +
+      '<div style="font-size:11px;color:#64748b;font-weight:600;letter-spacing:.3px">📦 FBA 价格分布</div>' +
+      '<div style="font-size:22px;color:#1e293b;font-weight:700;margin:4px 0">' + fbaMain + '</div>' +
+      '<div style="font-size:11px;color:#64748b">' + (fps ? (fpb.low + ' 低价 / ' + fpb.mid + ' 中价 / ' + fpb.high + ' 高价') : 'FBA 子集无价格样本') + '</div>' +
+      fbaBar +
+    '</div>' +
     nvCard +
     card('💸 SP 广告渗透', sprTxt, a.sponsoredCount + ' SP / ' + a.totalAsins + ' ASIN', sprColor, sprBg) +
     eeiCard +
