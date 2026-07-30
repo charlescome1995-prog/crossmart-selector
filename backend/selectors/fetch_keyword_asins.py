@@ -687,16 +687,24 @@ def parse_ss_text(ss_text):
         out["ss_bsr_main"] = bsr_matches[0][0] + " in " + bsr_matches[0][1]
     if len(bsr_matches) > 1:
         out["ss_bsr_sub"] = bsr_matches[1][0] + " in " + bsr_matches[1][1]
-    # Rating: 4.2(1,007) or 4.2 out of 5 stars
-    m = re.search(r"\u8bc4\u5206\(([^\n]+)\)", ss_text)
-    if m:
-        inner = m.group(1)
-        rm = re.match(r"([\d.]+)\(([\d,]+)\)", inner)
-        if rm:
-            out["ss_rating"] = rm.group(1)
-            out["ss_review_count"] = rm.group(2)
-        else:
-            out["ss_rating"] = inner
+    # 2026-07-30 \u4fee\uff1a\u517c\u5bb9 SellerSprite 2026 \u65b0\u683c\u5f0f\u300c\u8bc4\u5206\u6570: 4.4(157)\u300d
+    #   - \u65b0\u683c\u5f0f: \u8bc4\u5206\u6570: 4.4(157)  \u2192 rating="4.4", review_count="157"
+    #   - \u65e7\u683c\u5f0f: \u8bc4\u5206(4.4)        \u2192 rating="4.4"\uff08\u65e0\u8bc4\u8bba\u6570\uff09
+    #   - \u65e7\u56de\u9000: \u8bc4\u5206(4.4(1,007)) \u2192 rating="4.4", review_count="1,007"
+    m_new = re.search(r"\u8bc4\u5206\u6570[:\uff1a]\s*([\d.]+)\(([\d,]+)\)", ss_text)
+    if m_new:
+        out["ss_rating"] = m_new.group(1)
+        out["ss_review_count"] = m_new.group(2).replace(",", "")
+    else:
+        m_old = re.search(r"\u8bc4\u5206\(([^\n]+)\)", ss_text)
+        if m_old:
+            inner = m_old.group(1)
+            rm = re.match(r"([\d.]+)\(([\d,]+)\)", inner)
+            if rm:
+                out["ss_rating"] = rm.group(1)
+                out["ss_review_count"] = rm.group(2).replace(",", "")
+            else:
+                out["ss_rating"] = inner
     return out
 
 

@@ -544,8 +544,9 @@ const KW_COLS = [
   {key:'ss_revenue', title:'销售额', w: 100, type:'text', parse: _parseNum},
   {key:'ss_fba_fee', title:'FBA费', w: 80, type:'text', parse: _parseNum},
   {key:'ss_margin', title:'毛利率', w: 80, type:'text', parse: _parseNum},
-  {key:'ss_price', title:'SS价', w: 80, type:'text', parse: _parseNum},
-  {key:'ss_rating', title:'SS评分', w: 80, type:'text', parse: _parseNum},
+  // 2026-07-30 删 ss_price / ss_rating：与 Amazon DOM 的 price / rating 完全冗余（108/108 一致），
+  //   且 ss_rating 老数据有 bug（值是「评分数:4.4(157」这种脏串）。
+  //   数据 JSON 里这两个字段仍保留（不影响），仅前端表格不展示。
   {key:'ss_review_count', title:'评论数', w: 80, type:'text', parse: _parseNum},
   {key:'ss_delivery_days', title:'配送时长', w: 80, type:'text', parse: _parseNum},
   {key:'ss_prime_days', title:'Prime时长', w: 80, type:'text', parse: _parseNum},

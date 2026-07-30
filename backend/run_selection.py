@@ -518,6 +518,25 @@ def run():
                     final_records = new_records
                     final_items = results
 
+                # 2026-07-30 清洗脏数据：旧版本 regex 不兼容新 SS 格式「评分数: 4.4(157)」，
+                # 导致 ss_rating 字段被错填成「评分数):4.4(157」这种脏串。
+                # 清洗规则：值不是「可选货币前缀 + 纯数字（含小数）」就置 None，下次重抓自然覆盖。
+                _cleaned = 0
+                _valid_num = re.compile(r'^[\$£€¥]?\d+(\.\d+)?$')
+                for _rec in final_records.values():
+                    for _d in (_rec.get('detail') or []):
+                        for _k in ('ss_rating', 'ss_price'):
+                            _v = _d.get(_k)
+                            if _v is None:
+                                continue
+                            _v = str(_v).strip()
+                            # 合法值：可选 $ / £ / € / ¥ + 数字（可含小数）；否则置 None
+                            if _v and not _valid_num.match(_v):
+                                _d[_k] = None
+                                _cleaned += 1
+                if _cleaned:
+                    print(f'  🧹 清洗脏 ss_rating/ss_price: {_cleaned} 条 → None')
+
                 with open(KEYWORD_ASINS_JSON, 'w', encoding='utf-8') as f:
                     json.dump(
                         {
