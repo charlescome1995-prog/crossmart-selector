@@ -334,8 +334,8 @@ function renderTable(name) {
       <td class="col-country">${c}</td>
       <td class="col-kw kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank">${kw}</a></td>
       <td class="col-tier">${tier}</td>
-      <td class="col-yg num">${fmtNum(m['月购_calc'])}</td>
-      <td class="col-xgb num">${fmtNum(m['需供比'])}</td>
+      <td class="col-yg" style="text-align:left">${fmtNum(m['月购_calc'])}</td>
+      <td class="col-xgb" style="text-align:left">${fmtNum(m['需供比'])}</td>
       <td class="col-pfs num">${fmtNum(m['评分数'])}</td>
       <td class="col-spr num">${fmtNum(m['SPR'])}</td>
       <td class="col-ad num">${fmtNum(m['广告竞品数'])}</td>
@@ -357,7 +357,7 @@ function renderTable(name) {
         <th data-col="keyword" data-type="str">关键词</th>
         <th data-col="tier" data-type="str">档</th>
         <th data-col="yg" data-type="num">月购</th>
-        <th data-col="xgb" data-type="num">供需比</th>
+        <th data-col="xgb" data-type="num">需供比</th>
         <th data-col="pfs" data-type="num">评价数</th>
         <th data-col="spr" data-type="num">SPR</th>
         <th data-col="ad" data-type="num">广告竞品</th>
