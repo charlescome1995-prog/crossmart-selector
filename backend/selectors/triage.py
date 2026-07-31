@@ -190,7 +190,12 @@ def main():
             "rank": rank,
             "country": it["country"],
             "keyword": it["keyword"],
-            "category_top": it["category_top"],
+            # 2026-07-30 透传：原关键词中文 / 原关键词组 / 子类目（4 桶表中文标签 + 表格子类目展示）
+            #   之前 commit 1a6f6fc 漏改 triage.py，导致 strategy_router 透传给空串
+            "kw_zh": it.get("kw_zh", ""),
+            "kw_group": it.get("kw_group", ""),
+            "category_top": it.get("category_top", ""),
+            "category_sub": it.get("category_sub", ""),
             "metrics": it["metrics"],
             "tier": tier,
             "tier_score": score,
