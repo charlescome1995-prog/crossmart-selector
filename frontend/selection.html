@@ -77,6 +77,21 @@ table.data td.empty{text-align:center;color:#94a3b8;padding:40px;font-size:14px}
 .col-country{width:3%}
 .col-kw{width:22%}
 .col-tier{width:6%}
+
+/* 2026-07-30 关键词中文翻译标签：浅蓝底圆角，跟其他属性列视觉对齐 */
+.kw-zh-tag {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #1e40af;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
 .col-yg{width:7%}
 .col-xgb{width:7%}
 .col-pfs{width:7%}
@@ -340,7 +355,7 @@ function renderTable(name) {
     return `<tr class="master-row" data-kw="${kw.toLowerCase()}" data-country="${c.toUpperCase()}" data-key="${safeKey}">
       <td class="col-toggle" style="text-align:center"><button class="toggle-btn" data-key="${safeKey}" onclick="toggleExpand(this.dataset.key)" title="展开 ASIN 详情 + 6 个 AI 分析">+</button></td>
       <td class="col-country">${c}</td>
-      <td class="col-kw kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank">${kw}</a>${it.kw_zh ? ' <span class="kw-zh" style="color:#64748b;font-size:11px">（'+escapeHtml(it.kw_zh)+'）</span>' : ''}</td>
+      <td class="col-kw kw"><a href="https://${domain}/s?k=${encodeURIComponent(it.keyword||'')}" target="_blank">${kw}</a>${it.kw_zh ? '<br><span class="kw-zh-tag" title="' + escapeHtml(it.kw_zh) + '（来自原始表格「原关键词中文」列）">' + escapeHtml(it.kw_zh) + '</span>' : ''}</td>
       <td class="col-tier">${tier}</td>
       <td class="col-yg" style="text-align:left">${fmtNum(m['月购_calc'])}</td>
       <td class="col-xgb" style="text-align:left">${fmtNum(m['需供比'])}</td>
